@@ -280,6 +280,165 @@ double QSCCutEnergy3(int *note,double *R,ATOM atom1, ATOM atom2,ATOM atom3,int N
 	return EP;
 }
 
+//三合金能量
+double QSCEnergy(int *note, double *R, ATOM *atoms, int atomTypeCount, int N)
+{
+	int not,not1;
+	int i,j;
+	double R1;
+	double RR;
+	double FMJV,FMJP;
+	double EP=0;
+    double *PEN,*VEN;
+	QSCATOM *QSCAtoms;
+
+	QSCAtoms = calloc(atomTypeCount * atomTypeCount, sizeof(QSCATOM));
+	PEN = calloc(N,sizeof(double));
+	VEN = calloc(N,sizeof(double));
+	
+	for( i = 0; i < atomTypeCount; i++ )
+	{
+		for( j = 0; j < atomTypeCount; j++)
+		{
+			if( i == j)
+				QSCAtoms[i*atomTypeCount + j] = GetQSCAtom(atoms[i]);
+			else
+				QSCAtoms[i*atomTypeCount + j] = GetQSCTwoAtom(atoms[i],atoms[j]);
+		}
+	}
+	
+	for(i=0;i<N-1;i++){	
+		not = *(note+i);
+		for(j=i+1;j<N;j++)
+		{   
+			R1 = *(R+i*N+j);
+            not1 = *(note+j);
+
+			RR = QSCAtoms[not * atomTypeCount + not1].a/R1;
+			FMJV = QSCAtoms[not * atomTypeCount + not1].e*pow(RR,QSCAtoms[not * atomTypeCount + not1].n);
+			FMJP = pow(RR,QSCAtoms[not * atomTypeCount + not1].m);
+
+		    VEN[i] = VEN[i]+FMJV*0.5;
+			VEN[j] = VEN[j]+FMJV*0.5;
+			PEN[i] = PEN[i]+FMJP;
+			PEN[j] = PEN[j]+FMJP;
+		}
+	}
+	
+	for(i=0;i<N;i++)
+	{	
+		not = *(note+i);
+		PEN[i] = - QSCAtoms[not * atomTypeCount + not].c
+				 * QSCAtoms[not * atomTypeCount + not].e
+				 * sqrt(PEN[i]);
+
+		EP = EP+VEN[i]+PEN[i];
+	}
+	
+	free(QSCAtoms);
+	free(PEN);
+	free(VEN);
+	return EP;
+}
+
+//计算作用力
+double QSCForce(int *note,double *R,
+				double *x,double *y,double *z,
+				double *FX,double *FY,double *FZ,
+				ATOM *atoms, int atomTypeCount,int N)
+{   
+	int not1,not2;
+	int i,j;
+	double R2,RR;
+	double FMJP,FMJ1,FMJ2,FK;
+	double *PEN;
+	double *FF;
+	double FP=0;
+	double maxF;
+	QSCATOM *QSCAtoms,tempQSCAtom;
+
+	QSCAtoms = calloc(atomTypeCount * atomTypeCount, sizeof(QSCATOM));
+	PEN = calloc(N,sizeof(double));
+	FF = calloc(N,sizeof(double));
+
+	for( i = 0; i < atomTypeCount; i++ )
+	{
+		for( j = 0; j < atomTypeCount; j++)
+		{
+			if( i == j)
+				QSCAtoms[i*atomTypeCount + j] = GetQSCAtom(atoms[i]);
+			else
+				QSCAtoms[i*atomTypeCount + j] = GetQSCTwoAtom(atoms[i],atoms[j]);
+		}
+	}
+
+	maxF = 0;
+	memset(FX,0,sizeof(double)*N);
+	memset(FY,0,sizeof(double)*N);
+	memset(FZ,0,sizeof(double)*N);
+
+	for(i=0;i<N-1;i++)
+	{	
+		not1 = note[i];	
+		for(j=i+1;j<N;j++)
+		{   
+			R2 = *(R+i*N+j); 
+			not2 = note[j];
+			
+			RR = QSCAtoms[not1*atomTypeCount + not2].a/R2;
+			FMJP = pow(RR,QSCAtoms[not1*atomTypeCount + not2].m);
+
+			PEN[i] = PEN[i]+FMJP;
+			PEN[j] = PEN[j]+FMJP;
+		}
+	}
+	for(i=0;i<N;i++)
+	{	
+		not1 = note[i];
+		PEN[i] = QSCAtoms[not1*atomTypeCount + not1].c*QSCAtoms[not1*atomTypeCount + not1].e
+				 /2/sqrt(PEN[i]);
+	}
+
+	for(i=0;i<N-1;i++)
+	{	
+		not1 = note[i];	
+		for(j=i+1;j<N;j++)
+		{   
+			R2 = *(R+i*N+j); 
+			not2 = note[j];
+			
+			tempQSCAtom = QSCAtoms[not1*atomTypeCount + not2];
+            RR = tempQSCAtom.a/R2;
+			FMJ1 = pow(RR,tempQSCAtom.n+1);
+			FMJ1 = -(tempQSCAtom.n*tempQSCAtom.e/tempQSCAtom.a)*FMJ1;
+			FMJ2 = pow(RR,tempQSCAtom.m+1);
+			FMJ2 = -(tempQSCAtom.m/tempQSCAtom.a)*FMJ2;
+			
+			FK = -(FMJ1 - (PEN[i] + PEN[j])*FMJ2);
+			FX[i]=FX[i]+FK*(x[i]-x[j])/R2;
+			FX[j]=FX[j]-FK*(x[i]-x[j])/R2;
+			FY[i]=FY[i]+FK*(y[i]-y[j])/R2;
+			FY[j]=FY[j]-FK*(y[i]-y[j])/R2;
+			FZ[i]=FZ[i]+FK*(z[i]-z[j])/R2;
+			FZ[j]=FZ[j]-FK*(z[i]-z[j])/R2;
+		}
+	}
+	for(i=0;i<N;i++)
+	{
+		FF[i] = sqrt(FX[i]*FX[i]+FY[i]*FY[i]+FZ[i]*FZ[i]);
+		FP = FP+FF[i]*FF[i];
+		if(FF[i]>maxF)
+			maxF = FF[i];
+	}
+	FP = sqrt(FP)/N;
+
+	free(QSCAtoms);
+	free(PEN);
+	free(FF);
+	return FP;
+}
+
+
 QSCATOM GetQSCAtom(ATOM atom)
 {
 	QSCATOM zero = {0};
@@ -305,3 +464,24 @@ QSCATOM GetQSCAtom(ATOM atom)
 
 	return zero;
 }
+
+QSCATOM GetQSCTwoAtom(ATOM atom1, ATOM atom2)
+{
+	QSCATOM QSCAtom1, QSCAtom2;
+	QSCATOM temp;
+
+	QSCAtom1 = GetQSCAtom(atom1); QSCAtom2 = GetQSCAtom(atom2);
+	temp.n = (QSCAtom1.n + QSCAtom2.n) / 2;
+	temp.m = (QSCAtom1.m + QSCAtom2.m) / 2;
+	temp.e = sqrt(QSCAtom1.e * QSCAtom2.e);
+	temp.c = QSCAtom1.c;
+	temp.a = (QSCAtom1.a + QSCAtom2.a) / 2;
+
+	return temp;
+}
+
+
+
+
+
+

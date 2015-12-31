@@ -102,3 +102,5 @@ void JAJB(char *input,int N);
 void saveMatrix(double *x, int N, char* output);
 
 double getLatticeParameter(ATOM atom1,ATOM atom2,ATOM atom3);
+
+void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N);

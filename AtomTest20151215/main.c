@@ -21,9 +21,41 @@
 #include "Algorithm.h"	//算法的定义
 #include "Energy.h"		//势能的定义
 
+void test()
+{
+	double *x,*y,*z,*R;
+	int *note;
+	int N;
+	double E1,E2,E3;
+	ATOM atoms[3] = {Pt,Pd,Rh};
+
+	N = 1417;
+	note = calloc(N,sizeof(int));
+	x = calloc(N,sizeof(double));
+	y = calloc(N,sizeof(double));
+	z = calloc(N,sizeof(double));
+	R = calloc(N*N,sizeof(double));
+	ReadFile("result.txt",note,x,y,z,N);
+	Distance(x,y,z,R,N);
+	SetEnergyPow(Pt,Pd,Rh);
+	E1 = QSCEnergy3(note,R,Pt,Pd,Rh,N);
+	E2 = QSCEnergy(note,R,atoms,3,N);
+	printf("%f\n%f\n%f\n",E1,E2,E3);
+	system("pause");
+}
+
+void test1()
+{
+	ATOM atoms[3] = {Pt,Pd,Rh};
+	int N = 1417;
+
+	SD_File("result.txt",atoms,3,N);
+}
 
 main()
 { 
+	test1();
+
 	//算法：蒙特卡洛算法；
 	//初始结构：随机
 	//形状：立法体
@@ -71,12 +103,12 @@ main()
 	//种群大小：100
 	//惯性系数：0.25
 	//调整率：1.0
-	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd1,TBM,100,0.25,1.0,"PSO_PARA1_YES",PSOYesImprove);//改进后PSO，第一组参数
-	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd2,TBM,100,0.25,1.0,"PSO_PARA2_YES",PSOYesImprove);//改进后PSO，第二组参数
-	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd3,TBM,100,0.25,1.0,"PSO_PARA3_YES",PSOYesImprove);//改进后PSO，第三组参数
+//	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd1,TBM,100,0.25,1.0,"PSO_PARA1_YES",PSOYesImprove);//改进后PSO，第一组参数
+//	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd2,TBM,100,0.25,1.0,"PSO_PARA2_YES",PSOYesImprove);//改进后PSO，第二组参数
+//	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd3,TBM,100,0.25,1.0,"PSO_PARA3_YES",PSOYesImprove);//改进后PSO，第三组参数
 
-	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd1,TBM,100,0.25,1.0,"PSO_PARA1_NO",PSONoImprove);//改进前PSO，第一组参数
-	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd2,TBM,100,0.25,1.0,"PSO_PARA2_NO",PSONoImprove);//改进前PSO，第二组参数
-	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd3,TBM,100,0.25,1.0,"PSO_PARA3_NO",PSONoImprove);//改进前PSO，第三组参数
+//	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd1,TBM,100,0.25,1.0,"PSO_PARA1_NO",PSONoImprove);//改进前PSO，第一组参数
+//	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd2,TBM,100,0.25,1.0,"PSO_PARA2_NO",PSONoImprove);//改进前PSO，第二组参数
+//	PSO2_InitWithMixing("THH210",3285,1642,Pt,Pd3,TBM,100,0.25,1.0,"PSO_PARA3_NO",PSONoImprove);//改进前PSO，第三组参数
 
 }

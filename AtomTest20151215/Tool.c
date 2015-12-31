@@ -965,6 +965,122 @@ double getLatticeParameter(ATOM atom1,ATOM atom2,ATOM atom3)
 	return GetAtomPara(atom1).a;
 }
 
+//最速下降法弛豫
+void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N)
+{
+	int i=0,j=0;
+	double XI;
+	int tig = 0;
+	double bili;
+	int *note;
+	double *x,*y,*z,*xx,*yy,*zz;
+	double *R,*RR;
+	double *FX,*FY,*FZ;
+	double E0,E1,F0,F1;
+	double eps = 1e-10;
+	double nowstep = 0.001;
+	int RSTEP = 1000;
+	int clocks = 0;
+	
+	note = calloc(N,sizeof(int));
+	x = calloc(N,sizeof(double));
+	y = calloc(N,sizeof(double));
+	z = calloc(N,sizeof(double));
+	R = calloc(N*N,sizeof(double));
+	FX = calloc(N,sizeof(double));
+	FY = calloc(N,sizeof(double));
+	FZ = calloc(N,sizeof(double));
+	xx = calloc(N,sizeof(double));
+	yy = calloc(N,sizeof(double));
+	zz = calloc(N,sizeof(double));
+	RR = calloc(N*N,sizeof(double));
+
+
+	ReadFile(input,note,x,y,z,N);
+	Distance(x,y,z,R,N);
+	E0 = QSCEnergy(note,R,atoms,atomTypeCount,N);
+	F0 = QSCForce(note,R,x,y,z,FX,FY,FZ,atoms,atomTypeCount,N);
+	E1 = E0;
+	F1 = F0;
+	printf("N = %d\n",N);
+	printf("E0 = %lf\n",E0);
+	printf("F0 = %lf\n",F0);
+	printf("a=%lf\n",Rmin*sqrt(2));
+
+
+	while(1)
+	{   
+		//力足够小或迭代次数很大时退出
+		if(F0 < eps || clocks >=RSTEP || nowstep < 1e-10){
+			break;
+		}
+		clocks ++;
+		//根据力方向移动
+		for(i=0;i<N;i++)
+		{	
+			xx[i] = x[i]+nowstep*FX[i];
+			yy[i] = y[i]+nowstep*FY[i];
+			zz[i] = z[i]+nowstep*FZ[i];
+		}
+		
+		Distance(xx,yy,zz,RR,N);
+		F1 = QSCForce(note,RR,xx,yy,zz,FX,FY,FZ,atoms,atomTypeCount,N);
+		E1 = QSCEnergy(note,RR,atoms,atomTypeCount,N);
+		//如果能量减小接受增大步长，否则步长减小
+		if(E1<E0)
+		{
+			F0 = F1;
+			E0 = E1;
+			for(i=0;i<N;i++)
+			{	
+				x[i] = xx[i];
+				y[i] = yy[i];
+				z[i] = zz[i];
+			}
+			for(i=0;i<N-1;i++)
+			{
+				for(j=i+1;j<N;j++)
+				{
+					*(R+i*N+j) = *(RR+i*N+j);
+					*(R+j*N+i) = *(RR+j*N+i);
+				}
+			}
+			nowstep = nowstep *1.05;
+			tig = 1;
+		}
+		else
+		{
+			nowstep = 0.6*nowstep;
+			tig = 0;
+		}
+
+       if(tig == 1)
+	   {
+			printf("clocks=  %d\n",clocks);
+			printf("E0    =  %lf\n",E0);
+			printf("F     =  %lf\n",F0);
+			printf("step  =  %lf\n",nowstep);
+		}
+
+	}
+	Distance(x,y,z,R,N);
+	printf("a=%lf\n",Rmin*sqrt(2));
+
+
+	free(x);
+	free(y);
+	free(z);
+	free(FX);
+	free(FY);
+	free(FZ);
+	free(R);
+	free(xx);
+	free(yy);
+	free(zz);
+	free(RR);
+}
+
+
 
 
 
