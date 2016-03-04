@@ -75,6 +75,16 @@ PCutEnergy3 GetCutEnergyFunction(PE type)
 	return NULL;
 }
 
+PEnergy GetEnergyFunction1(PE type)
+{
+	switch (type)
+	{
+	case QSC:
+		return QSCEnergy;
+		break;
+	}
+	return NULL;
+}
 
 //读取坐标
 void ReadCood(char *shape,int N,double *x,double *y,double *z){
@@ -92,6 +102,25 @@ void ReadCood(char *shape,int N,double *x,double *y,double *z){
 	for(i=0;i<N;i++){
 		fscanf(fp,"%lf %lf %lf",&x[i],&y[i],&z[i]);
 	}
+	fclose(fp);
+}
+
+void ReadCood1(char *shape,int N,COOD *_cood){
+	int i;
+	char cood[30] ="cood\\";
+	char num[100];
+	FILE *fp;
+	strcat(cood,shape);
+	strcat(cood,"\\");
+	strcat(cood,shape);
+	sprintf(num,"_%d.txt",N);
+	strcat(cood,num);
+	fp = fopen(cood,"r");
+	fgets(num,99,fp);
+	for(i=0;i<N;i++){
+		fscanf(fp,"%lf %lf %lf",_cood->x+i,_cood->y+i,_cood->z+i);
+	}
+	_cood->N = N;
 	fclose(fp);
 }
 
@@ -130,16 +159,16 @@ void MixNoteInt3(int *note,int N,int A,int B){
 	}
 }
 
-void MixNoteInt(int *note,int N,ATOMNUM atomNum){
+void MixNoteInt(int *note,int N,ATOMNUM* atomNum){
 	int i;
 	int point,temp,index;
 	int *sumNumberBeforeAtom;
 
-	sumNumberBeforeAtom = malloc(atomNum.atomTypeCount * sizeof(int));
-	sumNumberBeforeAtom[0] = atomNum.numberOfAtom[0];
+	sumNumberBeforeAtom = malloc(atomNum->atomTypeCount * sizeof(int));
+	sumNumberBeforeAtom[0] = atomNum->numberOfAtom[0];
 
-	for(i=1;i<atomNum.atomTypeCount;i++)
-		sumNumberBeforeAtom[i] = sumNumberBeforeAtom[i-1] + atomNum.numberOfAtom[i];
+	for(i=1;i<atomNum->atomTypeCount;i++)
+		sumNumberBeforeAtom[i] = sumNumberBeforeAtom[i-1] + atomNum->numberOfAtom[i];
 
 	for(i=0;i<N;i++)
 		note[i] = i;
@@ -469,6 +498,51 @@ char* StoragePath(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATOM atomC
 	return Line_End;
 }
 
+char* StoragePath1(char *shape,int N,ALLOY *alloy,ATOMNUM *atomNum,char *Output)
+{
+	int i;
+	char Line[20];
+	char *Line_End;
+	
+	//开辟足够大的空间来存储路径
+	Line_End = calloc(100,sizeof(char));
+	
+	//路径: [Output]
+	strcpy(Line_End,Output);
+	mkdir(Line_End);
+
+	//路径：[Output]\\原子类型
+	strcat(Line_End,"\\");
+	for( i = 0; i < alloy->atomTypeCount; i++ )
+		strcat(Line_End,GetAtomPara(alloy->atoms[i]).name);
+	mkdir(Line_End);
+
+	//路径：[Output]\\原子类型\\构型名称
+	strcat(Line_End,"\\");
+	strcat(Line_End,shape);
+	mkdir(Line_End);
+
+	//路径：[Output]\\原子类型\\构型名称\\原子总数
+	sprintf(Line,"\\%d",N);
+	strcat(Line_End,Line);
+	mkdir(Line_End);
+
+	//路径：[Output]\\原子类型\\构型名称\\原子总数\\各原子比例
+	strcat(Line_End,"\\");
+	for( i = 0; i < atomNum->atomTypeCount; i++ )
+	{
+		if( i == 0 )
+			sprintf(Line,"%.3f",(double)atomNum->numberOfAtom[i] / N);
+		else
+			sprintf(Line,"-%.3f",(double)atomNum->numberOfAtom[i] / N);
+		strcat(Line_End,Line);
+	}
+	mkdir(Line_End);
+
+	return Line_End;
+}
+
+
 //打印Diaond文件格式，文件名为“Diamond.txt”(三合金)
 void printDiamond3(int *note,double *x,double *y,double *z,ATOM atomA,ATOM atomB,ATOM atomC,int N,char *path){
 	FILE *fp;
@@ -487,17 +561,18 @@ void printDiamond3(int *note,double *x,double *y,double *z,ATOM atomA,ATOM atomB
 	fclose(fp);
 }
 
-//打印Diaond文件格式，文件名为“Diamond.txt”(三合金)
-void printDiamond(int *note,double *x,double *y,double *z,ALLOY alloy,int N,char *path){
+void printDiamond(int *note,int N,COOD *cood,ALLOY *alloy,char *path)
+{
 	FILE *fp;
 	int i;
+	
 	fp = fopen(path,"w");
 	fprintf(fp,"%d\n",N);
-	for(i = 0; i < alloy.atomTypeCount; i++)
-		fprintf(fp,"%s",GetAtomPara(alloy.atoms[i]).name);
+	for(i = 0; i < alloy->atomTypeCount; i++)
+		fprintf(fp,"%s",GetAtomPara(alloy->atoms[i]).name);
 	fprintf(fp,",NCS\n");
 	for(i=0;i<N;i++){
-		fprintf(fp,"%s\t%lf\t%lf\t%lf\n",GetAtomPara(alloy.atoms[note[i]]).name,x[i],y[i],z[i]);
+		fprintf(fp,"%s\t%lf\t%lf\t%lf\n",GetAtomPara(alloy->atoms[note[i]]).name,cood->x[i],cood->y[i],cood->z[i]);
 	}
 	fclose(fp);
 }
@@ -515,20 +590,18 @@ void printResult3(int *note,double *x,double *y,double *z,int N,double bili,char
 	fclose(fp);
 }
 
-//打印result文件格式，文件名为“result.txt”(三合金)
-void printResult(int *note,double *x,double *y,double *z,int N,double bili,char *path){
+
+void printResult(int *note,int N,COOD *cood,char *path)
+{
 	FILE *fp;
 	int i;
+
 	fp = fopen(path,"w");
-	fprintf(fp,"%d\t%lf\n",N,bili);
-	for(i=0;i<N;i++){
-		fprintf(fp,"%d\t%lf\t%lf\t%lf\n",note[i],x[i],y[i],z[i]);
-	}
+	fprintf(fp,"%d\n",N);
+	for(i=0;i<N;i++)
+		fprintf(fp,"%d\t%lf\t%lf\t%lf\n",note[i],cood->x[i],cood->y[i],cood->z[i]);	
 	fclose(fp);
 }
-
-
-
 
 
 
@@ -1054,6 +1127,20 @@ double getLatticeParameter(ATOM* atoms, int atomTypeCount)
 	return atomLattice;
 }
 
+double getLatticeParameter1(ALLOY *alloy)
+{
+	int i;
+	double atomLattice = 0;
+	for( i = 0; i < alloy->atomTypeCount; i++)
+	{
+		atomLattice += GetAtomPara(alloy->atoms[i]).a;
+	}
+	atomLattice /= alloy->atomTypeCount;
+	return atomLattice;
+}
+
+
+
 //最速下降法弛豫
 void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N)
 {
@@ -1156,7 +1243,7 @@ void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N)
 	}
 	Distance(x,y,z,R,N);
 	printf("a=%lf\n",Rmin*sqrt(2));
-	printDiamond(note,x,y,z,alloy,N,input);
+	//	printDiamond(note,x,y,z,alloy,N,input);
 
 	free(x);
 	free(y);
@@ -1171,8 +1258,98 @@ void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N)
 	free(RR);
 }
 
+void Alloy_Init(ALLOY *alloy,...)
+{
+	va_list argp;
+	int argno;
+	ATOM temp;
 
+	va_start(argp,alloy);
+	argno = 0;
+	while( (temp = va_arg(argp,ATOM)) != END )
+		argno ++;
 
+	alloy->atomTypeCount = argno;
+	alloy->atoms = calloc(argno,sizeof(ATOM));
+	va_end(argp);
+	
+	va_start(argp,alloy);
+	argno = 0;
+	while( (temp = va_arg(argp,ATOM)) != END )
+	{
+		alloy->atoms[argno] = temp;
+		argno ++;
+	}
+	va_end(argp);
+}
+
+void Alloy_Copy(ALLOY *to, ALLOY *from)
+{
+	to->atomTypeCount = from->atomTypeCount;
+	to->atoms = calloc(to->atomTypeCount,sizeof(ATOM));
+	memcpy(to->atoms, from->atoms, to->atomTypeCount * sizeof(ATOM));
+}
+
+void Alloy_Free(ALLOY *alloy)
+{
+	free(alloy->atoms);
+	alloy->atoms = NULL;
+	alloy->atomTypeCount = 0;
+}
+
+void AtomNum_Init(ATOMNUM *atomNum,...)
+{
+	va_list argp;
+	int argno;
+	int temp;
+
+	va_start(argp,atomNum);
+	argno = 0;
+	while( (temp = va_arg(argp,int)) != END )
+		argno ++;
+	va_end(argp);
+	atomNum->atomTypeCount = argno;
+	atomNum->numberOfAtom = calloc(argno,sizeof(int));
+	
+	va_start(argp,atomNum);
+	argno = 0;
+	while( (temp = va_arg(argp,int)) != END )
+	{
+		atomNum->numberOfAtom[argno] = temp;
+		argno ++;
+	}
+	va_end(argp);
+}
+
+void AtomNum_Copy(ATOMNUM *to, ATOMNUM *from)
+{
+	to->atomTypeCount = from->atomTypeCount;
+	to->numberOfAtom = calloc(to->atomTypeCount,sizeof(int));
+	memcpy(to->numberOfAtom, from->numberOfAtom, to->atomTypeCount * sizeof(int));
+}
+
+void AtomNum_Free(ATOMNUM *atomNum)
+{
+	free(atomNum->numberOfAtom);
+	atomNum->numberOfAtom = NULL;
+	atomNum->atomTypeCount = 0;
+}
+
+void Cood_Init(COOD *cood, int N)
+{
+	cood->x = calloc(N,sizeof(double));
+	cood->y = calloc(N,sizeof(double));
+	cood->z = calloc(N,sizeof(double));
+	cood->N = N;
+}
+
+void Cood_Free(COOD *cood)
+{
+	free(cood->x);
+	free(cood->y);
+	free(cood->z);
+	cood->N = 0;
+}
 
 
 

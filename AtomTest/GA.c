@@ -1,43 +1,31 @@
 #include "GA.h"
 
-//遗传算法
 
-void GA2_InitWithMixing(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,int POPSIZE,double pc,double pm,double rate,char *Output)
+
+void GA2_InitWithMixing(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,GAPARA *para,char *output)
 {
-	GA3_InitWithMixing(shape,N,A,N-A,atomA,atomB,atomB,energy,POPSIZE,pc,pm,rate,Output);
+	ALLOY alloy;
+	ATOMNUM atomNum;
+
+	Alloy_Init(&alloy,atomA,atomB,END);
+	AtomNum_Init(&atomNum,A,N-A,END);
+	GA_InitWithMixing(shape,N,&atomNum,&alloy,energy,para,output);
+	
+	Alloy_Free(&alloy);
+	AtomNum_Free(&atomNum);
 }
 
-void GA3_InitWithMixing(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATOM atomC,PE energy,int POPSIZE,double pc,double pm,double rate,char *Output)
+void GA3_InitWithMixing(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATOM atomC,PE energy,GAPARA *para,char *output)
 {
-	int i;
-	double *x,*y,*z;
-	struct individual *pop;
+	ALLOY alloy;
+	ATOMNUM atomNum;
 
-	x = calloc(N,sizeof(double));
-	y = calloc(N,sizeof(double));
-	z = calloc(N,sizeof(double));
-
-	ReadCood(shape,N,x,y,z);
-	orderCoodFromCore(x,y,z,N);
-
-	pop = calloc(POPSIZE,sizeof(INDIVIDUAL));
-
-	srand((unsigned)time(NULL));
-	for(i=0;i<POPSIZE;i++){
-		pop[i].number = i;
-		pop[i].chrom = calloc(N,sizeof(int));
-		MixNoteInt3(pop[i].chrom,N,A,B);
-	}
-
-	GA3_Start(shape,N,A,B,pop,x,y,z,atomA,atomB,atomC,energy,POPSIZE,pm,pc,rate,Output);
-
-	free(x);
-	free(y);
-	free(z);
-	for(i = 0;i < POPSIZE;i++)
-		free(pop[i].chrom);
-	free(pop);
+	Alloy_Init(&alloy,atomA,atomB,atomC,END);
+	AtomNum_Init(&atomNum,A,B,N-A-B,END);
+	GA_InitWithMixing(shape,N,&atomNum,&alloy,energy,para,output);
 	
+	Alloy_Free(&alloy);
+	AtomNum_Free(&atomNum);	
 }
 
 void GA3_InitWithCoreSurface(char *shape,int N,int surfaceLayer,int B,ATOM atomA,ATOM atomB,ATOM atomC,PE energy,int POPSIZE,double pc,double pm,double rate,char *Output)
@@ -490,195 +478,251 @@ void adjustment_operator(double rate,  struct individual *pop, double *R, ATOM a
 	}
 }
 
-
-//交换个体间的数据
-void changeIndividual(struct individual *one,struct individual *two,int N){
-	int i;
-	one->energy=two->energy;
-	one->number=two->number;
-	one->value=two->value;
-	for(i=0;i<N;i++){
-		one->chrom[i] = two->chrom[i];
-	}
-}
-
-void GA_InitWithMixing(char *shape,int N, ATOMNUM atomNum,ALLOY alloy, PE energy, GAPARA para,char *Output)
+void adjustment_operator1(GAInstance *instance)
 {
-	int i;
-	COOD cood;
-	struct individual *pop;
-
-	cood.x = calloc(N,sizeof(double));
-	cood.y = calloc(N,sizeof(double));
-	cood.z = calloc(N,sizeof(double));
-	cood.N = N;
-
-	ReadCood(shape,N,cood.x,cood.y,cood.z);
-	orderCoodFromCore(cood.x,cood.y,cood.z,N);
-
-	pop = calloc(para.popSize,sizeof(INDIVIDUAL));
-
-	srand((unsigned)time(NULL));
-	for(i=0;i<para.popSize;i++){
-		pop[i].number = i;
-		pop[i].chrom = calloc(N,sizeof(int));
-		MixNoteInt(pop[i].chrom, N, atomNum);
-	}
-
-	GA_Start(shape,N,atomNum,pop,cood,alloy,energy,para,Output);
-
-	free(cood.x);
-	free(cood.y);
-	free(cood.z);
-	for(i = 0;i < para.popSize;i++)
-		free(pop[i].chrom);
-	free(pop);
+	int i,randN1,randN2,tempChrom,POPSIZE,N;
+	double tempE,r,rate;
+	struct individual *pbest,*pop;
 	
+	POPSIZE = instance->para.popSize;
+	rate = instance->para.adjustmentRate;
+	pop = instance->pop;
+	N = instance->N;
+
+
+	for(i=0;i<POPSIZE;i++)
+	{
+		r = RAND1;
+		if(r < rate)
+		{
+			pbest = pop + i;
+			randN1 = (int)(N * RAND1);
+			randN2 = (int)(N * RAND1);
+			while(pbest->chrom[randN1] == pbest->chrom[randN2])
+			{
+				randN1 = (int)(N * RAND1);
+				randN2 = (int)(N * RAND1);
+			}
+			tempChrom = pbest->chrom[randN1];
+			pbest->chrom[randN1] = pbest->chrom[randN2];
+			pbest->chrom[randN2] = tempChrom;
+			tempE = GetEnergyFunction1(instance->energyType)(pbest->chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,N); 
+			if(tempE <= pbest->energy)
+			{
+				pbest->energy = tempE;
+				continue;
+			} 
+			tempChrom = pbest->chrom[randN1];
+			pbest->chrom[randN1] = pbest->chrom[randN2];
+			pbest->chrom[randN2] = tempChrom;
+		}
+	}
 }
 
-void GA_Start(char *shape, int N, ATOMNUM atomNum, INDIVIDUAL *pop, COOD cood, ALLOY alloy, PE energy, GAPARA para, char *output)
+
+void GAIndividual_Init(INDIVIDUAL *one,int N) {	one->chrom = calloc(N,sizeof(int)); }
+void GAIndividual_Free(INDIVIDUAL *one) 
+{
+	one->energy =0; one->value = 0; 
+	free(one->chrom); one->chrom = NULL; 
+}
+
+void changeIndividual(struct individual *to,struct individual *from,int N){
+	int i;
+	to->energy = from->energy;
+	to->number = from->number;
+	to->value = from->value;
+	for(i=0;i<N;i++){
+		to->chrom[i] = from->chrom[i];
+	}
+}
+
+void GAPara_Init(GAPARA *para)
+{
+	memcpy(para, &_defGAPara, sizeof(*para));
+}
+
+void GA_InitWithMixing(char *shape,int N, ATOMNUM *atomNum,ALLOY *alloy, PE energy, GAPARA *para,char *Output)
 {
 	int i;
-	FILE *fp;
-	double E0,E1;
-	int clocks = 0, IJKL = 0, tig = 0, step = 0;
+	GAInstance instance;
+	
+	//初始化遗传算法实例
+	instance.shape = shape;
+	instance.N = N;
+	instance.energyType = energy;
+	Alloy_Copy(&instance.alloy,alloy);
+	AtomNum_Copy(&instance.atomNum,atomNum);
+	Cood_Init(&instance.cood,N);
+	instance.para = *para;
+	instance.pop = calloc(para->popSize,sizeof(INDIVIDUAL));
+	for( i = 0; i < para->popSize; i++)
+		GAIndividual_Init(&instance.pop[i],N);
+	GAIndividual_Init(&instance.best,N);
+	GAIndividual_Init(&instance.worst,N);
+	
+	//根据构型和原子数读取坐标
+	ReadCood1(shape,N,&instance.cood);
+	
+	//如果需要排序坐标则从里到外排序坐标
+	if(instance.para.needOrderCood == 1)
+		orderCoodFromCore(instance.cood.x,instance.cood.y,instance.cood.z,instance.N);
+	
+	//设置随机种子，不然每次启动随机值都一样，每个个体随机产生初始解
+	srand((unsigned)time(NULL));
+	for( i = 0; i < instance.para.popSize;i++)
+		MixNoteInt(instance.pop[i].chrom, instance.N, &instance.atomNum);
+
+	//开始进行遗传算法
+	GA_Start(&instance,Output);
+	
+	//释放遗传算法实例中开辟的空间
+	GAIndividual_Free(&instance.worst);
+	GAIndividual_Free(&instance.best);
+	for(i = 0;i < instance.para.popSize;i++)
+		GAIndividual_Free(&instance.pop[i]);
+	free(instance.pop);
+	Cood_Free(&instance.cood);
+	AtomNum_Free(&instance.atomNum);
+	Alloy_Free(&instance.alloy);
+}
+
+void GA_Start(GAInstance *instance, char *output)
+{
+//	FILE *fp;
+	double a0,E0,E1;
+	int i,clocks = 0, IJKL = 0, tig = 0, step = 0;
 	char *Line_End;
 	char Line_Date[100];
-	struct individual best_pop;
-	struct individual worst_pop;
-	double a0;
-	double biliA,biliB,biliC;
-	char *nameA,*nameB,*nameC;
-	COODDIS dis;
 
 	srand((unsigned)time(NULL));
-	dis.R = calloc(N*N,sizeof(double));
-	a0 = getLatticeParameter(alloy.atoms,alloy.atomTypeCount);
+	instance->dis.R = calloc(instance->N*instance->N,sizeof(double));
+	a0 = getLatticeParameter1(&instance->alloy);
 
-	//	Line_End = StoragePath(shape,N,A,B,atomA,atomB,atomC,Output);
+	Line_End = StoragePath1( instance->shape, instance->N, &instance->alloy, &instance->atomNum, output);
 
+	Distance1(instance->cood,&instance->dis);
+	for(i=0;i<instance->N;i++){
+		instance->cood.x[i] = instance->cood.x[i]*a0/(instance->dis.Rmin*sqrt(2));
+		instance->cood.y[i] = instance->cood.y[i]*a0/(instance->dis.Rmin*sqrt(2));
+		instance->cood.z[i] = instance->cood.z[i]*a0/(instance->dis.Rmin*sqrt(2));
+	}
+	Distance1(instance->cood,&instance->dis);
 
-//	Distance1(cood,&dis);
-//	for(i=0;i<N;i++){
-//		x[i] = x[i]*a0/(Rmin*sqrt(2));
-//		y[i] = y[i]*a0/(Rmin*sqrt(2));
-//		z[i] = z[i]*a0/(Rmin*sqrt(2));
-//	}
-//	Distance(x,y,z,R,N);
-//
-//	SetEnergyPow(atomA,atomB,atomC);
-//	setupJohnson();
+	for( i = 0; i < instance->para.popSize; i++)
+		instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
 
-//
-//	//初始化
-//	for(i=0;i<POPSIZE;i++){
-//		pop[i].energy = GetCutEnergyFunction(energy)(pop[i].chrom,R,atomA,atomB,atomC,N,a0);
-//	//	pop[i].energy = QSCEnergyNewModel(pop[i].chrom,atomA,atomB,N);
-//	}
-//	best_pop.chrom = calloc(N,sizeof(int));
-//	worst_pop.chrom = calloc(N,sizeof(int));
-//	changeIndividual(&best_pop,&(pop[0]),N);
-//	changeIndividual(&worst_pop,&(pop[0]),N);
-//	for(i=1;i<POPSIZE;i++)
-//	{
-//		if(pop[i].energy<best_pop.energy)
-//			changeIndividual(&best_pop,&(pop[i]),N);
-//		if(pop[i].energy>worst_pop.energy)
-//			changeIndividual(&worst_pop,&(pop[i]),N);
-//	}
-//
-//	E0 = best_pop.energy;
-//	E1 = E0;
-//	
-//	printf("\nInit GA...\n");
-//	printf("shape=%s\tN=%d\n",shape,N);
-//	printf("POPSIZE=%d\tpc=%lf\tpm=%lf\n",POPSIZE,pc,pm);
-//	printf("biliA=%.3f\tbiliB=%.3f\tbiliC=%.3f\n",biliA,biliB,biliC);
-//	printf("%s=%d\t%s=%d\t%s=%d\n",nameA,A,nameB,B,nameC,C);	
-//	printf("best=%lf\tworst=%lf\n",best_pop.energy,worst_pop.energy);
-//
-//
-//	printf("\nStart GA...\n");
+	GA_FindBestAndWorst(instance);
+
+	E0 = instance->best.energy;
+	E1 = E0;
+	
+	printf("\nInit GA...\n");
+	GA_PrintMsg(instance);
+
+	printf("\nStart GA...\n");
 //	strcpy(Line_Date,Line_End);
 //	strcat(Line_Date,"\\energy.txt");
 //	fp = fopen(Line_Date,"w");
 //	fprintf(fp,"\t%d\t%3.1lf\n",N,biliA);
 //	fprintf(fp,"%6d\t%6d\t%lf\n",clocks,IJKL,E0);
-//	while(1){
-//		E0 = best_pop.energy;
-//		clocks++;
-//	
-//		//选择
-//		select_operator(pop,N,POPSIZE,best_pop.energy,worst_pop.energy);
-//		//交叉
-//		crossover_operator(pop,N,POPSIZE,pc);
-//		//变异
-//		mutation_operator(pop,N,POPSIZE,pm);
+	while(1){
+		E0 = instance->best.energy;
+		clocks++;
+	
+		//选择
+		select_operator(instance->pop,instance->N,instance->para.popSize,instance->best.energy,instance->worst.energy);
+		//交叉
+		crossover_operator(instance->pop,instance->N,instance->para.popSize,instance->para.pc);
+		//变异
+		mutation_operator(instance->pop,instance->N,instance->para.popSize,instance->para.pm);
+		
+		for(i=0;i<instance->para.popSize;i++)
+			instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+				
+		if(instance->para.needAdjustment == 1)
+			adjustment_operator1(instance);	
 //		
-//
-//		for(i=0;i<POPSIZE;i++)
-//			pop[i].energy = GetCutEnergyFunction(energy)(pop[i].chrom,R,atomA,atomB,atomC,N,a0);
-//		//	pop[i].energy = QSCEnergyNewModel(pop[i].chrom,atomA,atomB,N);
-//		
-//		adjustment_operator(rate,pop,R,atomA,atomB,atomC,energy,N,POPSIZE);
-//		
-//		//保留最优个体
-//		changeIndividual(&pop[0],&best_pop,N);
-//
-//		changeIndividual(&best_pop,&(pop[0]),N);
-//		changeIndividual(&worst_pop,&(pop[0]),N);
-//		for(i=0;i<POPSIZE;i++)
-//		{
-//			if(pop[i].energy<best_pop.energy)
-//				changeIndividual(&best_pop,&(pop[i]),N);
-//			if(pop[i].energy>worst_pop.energy)
-//				changeIndividual(&worst_pop,&(pop[i]),N);
-//		}
-//		
-//		E1 = best_pop.energy;
-//		if( E1-E0<0.001 && E1-E0>-0.001){
-//			tig = 0;
-//			step ++;
-//		}	else {
-//			tig = 1;
-//			step = 0;
-//			IJKL++;
-//		}
-//		if(tig == 1 || (step!=0 && step%100 == 0))
-//		{	
-//			E0 = E1;
-//			printf("clocks=%d\tIJKL=%d\tstep=%d\n",clocks,IJKL,step);
-//			printf("  E   =%f\n",E0);
+		//保留最优个体
+		changeIndividual(&instance->pop[0],&instance->best,instance->N);
+
+		GA_FindBestAndWorst(instance);
+		
+		E1 = instance->best.energy;
+		if( E1-E0<0.001 && E1-E0>-0.001){
+			tig = 0;
+			step ++;
+		}	else {
+			tig = 1;
+			step = 0;
+			IJKL++;
+		}
+		if(tig == 1 || (step!=0 && step%100 == 0))
+		{	
+			E0 = E1;
+			printf("clocks=%d\tIJKL=%d\tstep=%d\n",clocks,IJKL,step);
+			printf("  E   =%f\n",E0);
 //			fprintf(fp,"%6d\t%6d\t%lf\n",clocks,IJKL,E0);
-//
-//			strcpy(Line_Date,Line_End);
-//			strcat(Line_Date,"\\result.txt");			
-//			printResult3(best_pop.chrom,x,y,z,N,0,Line_Date);
-//
-//			strcpy(Line_Date,Line_End);
-//			strcat(Line_Date,"\\Diamond.txt");
-//			printDiamond3(best_pop.chrom,x,y,z,atomA,atomB,atomC,N,Line_Date);
-//		}
-//
-//		if(step>1000)
-//			break;
-//
-//	}
+
+			GA_ResultFile(instance,Line_End);
+		}
+
+		if(step>instance->para.convergenceGenerations)
+			break;
+
+	}
 //	fclose(fp);
-//	free(R);
-//	free(worst_pop.chrom);
-//
-//	strcpy(Line_Date,Line_End);
-//	strcat(Line_Date,"\\result.txt");			
-//	printResult3(best_pop.chrom,x,y,z,N,0,Line_Date);
-//
-//	strcpy(Line_Date,Line_End);
-//	strcat(Line_Date,"\\Diamond.txt");
-//	printDiamond3(best_pop.chrom,x,y,z,atomA,atomB,atomC,N,Line_Date);
-//
+	free(instance->dis.R);
+	
+	GA_ResultFile(instance,Line_End);
+
 //	strcpy(Line_Date,Line_End);
 //	strcat(Line_Date,"\\result.txt");
 //	printData(Line_Date,Line_End,N);
-//
-//	free(best_pop.chrom);
+	
+	free(Line_End);
+}
+
+void GA_FindBestAndWorst(GAInstance *instance)
+{
+	int i;
+	changeIndividual(&instance->best,&(instance->pop[0]),instance->N);
+	changeIndividual(&instance->worst,&(instance->pop[0]),instance->N);
+	for(i=0;i<instance->para.popSize;i++)
+	{
+		if(instance->pop[i].energy<instance->best.energy)
+			changeIndividual(&instance->best,&(instance->pop[i]),instance->N);
+		if(instance->pop[i].energy>instance->worst.energy)
+			changeIndividual(&instance->worst,&(instance->pop[i]),instance->N);
+	}
+}
+
+void GA_PrintMsg(GAInstance *instance)
+{	
+	int i,tempNum;
+	ATOM tempATOM;
+	printf("shape=%s\tN=%d\n",instance->shape,instance->N);
+	printf("POPSIZE=%d\tpc=%lf\tpm=%lf\n",instance->para.popSize,instance->para.pc,instance->para.pm);
+	//	printf("biliA=%.3f\tbiliB=%.3f\tbiliC=%.3f\n",biliA,biliB,biliC);
+	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
+	{
+		tempATOM = instance->alloy.atoms[i];
+		tempNum = instance->atomNum.numberOfAtom[i];
+		printf("%s=%d\t",GetAtomPara(tempATOM).name,tempNum);
+	}
+	printf("\n");
+	printf("best=%lf\tworst=%lf\n",instance->best.energy,instance->worst.energy);
+}
+
+void GA_ResultFile(GAInstance *instance, char *output)
+{
+	char Line_Date[200];
+	strcpy(Line_Date,output);
+	strcat(Line_Date,"\\result.txt");			
+	printResult(instance->best.chrom, instance->N, &instance->cood, Line_Date);
+
+	strcpy(Line_Date,output);
+	strcat(Line_Date,"\\Diamond.txt");
+	printDiamond(instance->best.chrom, instance->N, &instance->cood, &instance->alloy, Line_Date);
+
 }

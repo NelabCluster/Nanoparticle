@@ -8,7 +8,7 @@ ATOMPARA GetAtomPara(ATOM atom);
 
 PEnergy3 GetEnergyFunction(PE type);
 PCutEnergy3 GetCutEnergyFunction(PE type);
-
+PEnergy GetEnergyFunction1(PE type);
 
 /***************************************
 * @Name:ReadCood
@@ -21,6 +21,7 @@ PCutEnergy3 GetCutEnergyFunction(PE type);
 * @return：void --- 
 ****************************************/
 void ReadCood(char *shape,int N,double *x,double *y,double *z);
+void ReadCood1(char *shape,int N,COOD *cood);
 
 /***************************************
 * @Name:ReadFile
@@ -37,7 +38,7 @@ void ReadFile(char *Input,int *note,double *x,double *y,double *z,int N);
 
 //初始排列
 void MixNoteInt3(int *note,int N,int A,int B);
-void MixNoteInt(int *note, int N, ATOMNUM atomNum);
+void MixNoteInt(int *note, int N, ATOMNUM *atomNum);
 
 void CoreSurfaceNote3(int *note,int N,double *x,double *y,double *z,int surfaceLayer,int B);
 void FromCoreNoteInt3(int *note,int N,int A,int B,double *x,double *y,double *z);
@@ -48,14 +49,15 @@ void Distance(double *x,double *y,double *z,double *R,int N);
 void Distance1(COOD cood,COODDIS *dis);
 //返回存储相对地址
 char* StoragePath(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATOM atomC,char *Output);
+char* StoragePath1(char *shape,int N,ALLOY *alloy,ATOMNUM *atomNum,char *Output);
 //原子所在层
 int* Shell_Shape(char *shape,int N);
 int* Shell_Cood(double *x,double *y,double *z,int N);
 
 void printResult3(int *note,double *x,double *y,double *z,int N,double bili,char *path);
-void printResult(int *note,double *x,double *y,double *z,int N,double bili,char *path);
+void printResult(int *note,int N,COOD *cood,char *path);
 void printDiamond3(int *note,double *x,double *y,double *z,ATOM atomA,ATOM atomB,ATOM atomC,int N,char *path);
-void printDiamond(int *note,double *x,double *y,double *z,ALLOY alloy,int N,char *path);
+void printDiamond(int *note,int N,COOD *cood,ALLOY *alloy,char *path);
 
 void printData(char *Line_Date,char *Line_End,int N);
 //根据原子里质心距离排序坐标
@@ -126,5 +128,16 @@ double getLatticeParameter3(ATOM atom1,ATOM atom2,ATOM atom3);
 * @return：double --- 晶格
 ****************************************/
 double getLatticeParameter(ATOM* atoms, int atomTypeCount);
+double getLatticeParameter1(ALLOY *alloy);
 
 void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N);
+
+void Alloy_Init(ALLOY *alloy,...);
+void Alloy_Copy(ALLOY *to, ALLOY *from);
+void Alloy_Free(ALLOY *alloy);
+void AtomNum_Init(ATOMNUM *atomNum,...);
+void AtomNum_Copy(ATOMNUM *to, ATOMNUM *from);
+void AtomNum_Free(ATOMNUM *atomNum);
+
+void Cood_Init(COOD *cood,int N);
+void Cood_Free(COOD *cood);
