@@ -1,199 +1,364 @@
 #include "PSO.h"
 
-void PSO2_InitWithMixing(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,int Popsize,double w,double rate,char *Output,PSOIMPROVE improve)
+void PSOPara_Init(PSOPARA *para)
 {
-	int i;
-	double *x,*y,*z;
-	PSOINDIVIDUAL *pop;
-	PSOSWAP *swap,*swapNext;
-
-	x = calloc(N,sizeof(double));
-	y = calloc(N,sizeof(double));
-	z = calloc(N,sizeof(double));
-
-	ReadCood(shape,N,x,y,z);
-	orderCoodFromCore(x,y,z,N);
-
-	pop = calloc(Popsize,sizeof(PSOINDIVIDUAL));
-
-	srand((unsigned)time(NULL));
-	for(i=0;i<Popsize;i++){
-		pop[i].chrom = calloc(N,sizeof(int));
-		MixNoteInt3(pop[i].chrom,N,A,N-A);
-		pop[i].swapList = initSwapSequence(10,N);
-		pop[i].pbest = calloc(1,sizeof(PSOINDIVIDUAL));
-		pop[i].pbest->chrom = calloc(N,sizeof(int));
-	}
-
-	PSO2_Start(shape,N,A,pop,x,y,z,atomA,atomB,energy,Popsize,w,rate,Output,improve);
-
-	free(x);
-	free(y);
-	free(z);
-	for(i = 0;i < Popsize;i++){
-		free(pop[i].chrom);
-		free(pop[i].pbest->chrom);
-		free(pop[i].pbest);
-		swapNext = pop[i].swapList;
-		while(swapNext != NULL)
-		{
-			swap = swapNext;
-			swapNext = swap->next;
-			free(swap);
-		}
-	}
-	free(pop);
+	memcpy(para, &_defPSOPara, sizeof(*para));
 }
 
-void PSO2_InitWithFromCore(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,int Popsize,double w,double rate,char *Output)
+void PSO2_InitWithMixing(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,PSOPARA *para,char *output)
 {
-	int i;
-	double *x,*y,*z;
-	PSOINDIVIDUAL *pop;
-	PSOSWAP *swap,*swapNext;
+	ALLOY alloy;
+	ATOMNUM atomNum;
 
-	x = calloc(N,sizeof(double));
-	y = calloc(N,sizeof(double));
-	z = calloc(N,sizeof(double));
-
-	ReadCood(shape,N,x,y,z);
-	orderCoodFromCore(x,y,z,N);
-
-	pop = calloc(Popsize,sizeof(PSOINDIVIDUAL));
-
-	srand((unsigned)time(NULL));
-	for(i=0;i<Popsize;i++){
-		pop[i].chrom = calloc(N,sizeof(int));
-		FromCoreNoteInt3(pop[i].chrom,N,A,N-A,x,y,z);
-		pop[i].swapList = initSwapSequence(10,N);
-		pop[i].pbest = calloc(1,sizeof(PSOINDIVIDUAL));
-		pop[i].pbest->chrom = calloc(N,sizeof(int));
-	}
-
-	PSO2_Start(shape,N,A,pop,x,y,z,atomA,atomB,energy,Popsize,w,rate,Output,PSOYesImprove);
-
-	free(x);
-	free(y);
-	free(z);
-	for(i = 0;i < Popsize;i++){
-		free(pop[i].chrom);
-		free(pop[i].pbest->chrom);
-		free(pop[i].pbest);
-		swapNext = pop[i].swapList;
-		while(swapNext != NULL)
-		{
-			swap = swapNext;
-			swapNext = swap->next;
-			free(swap);
-		}
-	}
-	free(pop);
+	Alloy_Init(&alloy,atomA,atomB,END);
+	AtomNum_Init(&atomNum,A,N-A,END);
+	PSO_InitWithMixing(shape,N,&atomNum,&alloy,energy,para,output);
+	
+	Alloy_Free(&alloy);
+	AtomNum_Free(&atomNum);
 }
 
-
-void PSO2_InitWithPhase(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,int Popsize,double w,double rate,char *Output)
+void PSO3_InitWithMixing(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATOM atomC,PE energy,PSOPARA *para,char *output)
 {
-	int i;
-	double *x,*y,*z;
-	PSOINDIVIDUAL *pop;
-	PSOSWAP *swap,*swapNext;
+	ALLOY alloy;
+	ATOMNUM atomNum;
 
-	x = calloc(N,sizeof(double));
-	y = calloc(N,sizeof(double));
-	z = calloc(N,sizeof(double));
-
-	ReadCood(shape,N,x,y,z);
-	orderCoodFromCore(x,y,z,N);
-
-	pop = calloc(Popsize,sizeof(PSOINDIVIDUAL));
-
-	srand((unsigned)time(NULL));
-	for(i=0;i<Popsize;i++){
-		pop[i].chrom = calloc(N,sizeof(int));
-		PhaseSeparationNoteInt2(pop[i].chrom,N,A,x,y,z);
-		pop[i].swapList = initSwapSequence(10,N);
-		pop[i].pbest = calloc(1,sizeof(PSOINDIVIDUAL));
-		pop[i].pbest->chrom = calloc(N,sizeof(int));
-	}
-
-	PSO2_Start(shape,N,A,pop,x,y,z,atomA,atomB,energy,Popsize,w,rate,Output,PSOYesImprove);
-
-	free(x);
-	free(y);
-	free(z);
-	for(i = 0;i < Popsize;i++){
-		free(pop[i].chrom);
-		free(pop[i].pbest->chrom);
-		free(pop[i].pbest);
-		swapNext = pop[i].swapList;
-		while(swapNext != NULL)
-		{
-			swap = swapNext;
-			swapNext = swap->next;
-			free(swap);
-		}
-	}
-	free(pop);
+	Alloy_Init(&alloy,atomA,atomB,atomC,END);
+	AtomNum_Init(&atomNum,A,B,N-A-B,END);
+	PSO_InitWithMixing(shape,N,&atomNum,&alloy,energy,para,output);
+	
+	Alloy_Free(&alloy);
+	AtomNum_Free(&atomNum);	
 }
 
-void PSO2_InitWithL0(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,int Popsize,double w,double rate,char *Output)
+void PSO_InitWithMixing(char *shape,int N,ATOMNUM *atomNum,ALLOY *alloy,PE energy,PSOPARA *para,char *output)
 {
 	int i;
-	double *x,*y,*z;
-	PSOINDIVIDUAL *pop;
-	PSOSWAP *swap,*swapNext;
+	PSOInstance instance;
+	
+	// 初始化粒子群实例
+	instance.shape = shape;
+	instance.N = N;
+	instance.energyType = energy;
+	Alloy_Copy(&instance.alloy,alloy);
+	AtomNum_Copy(&instance.atomNum,atomNum);
+	Cood_Init(&instance.cood,N);
+	instance.para = *para;
+	instance.pop = calloc(para->popSize,sizeof(PSOINDIVIDUAL));
+	for( i = 0; i < para->popSize; i++)
+		PSOIndividual_Init(&instance.pop[i],N);
+	instance.gbest = NULL;
+	instance.clocks = 0;
+	instance.IJKL = 0;
 
-	x = calloc(N,sizeof(double));
-	y = calloc(N,sizeof(double));
-	z = calloc(N,sizeof(double));
-
-	ReadCood(shape,N,x,y,z);
-	orderCoodFromCore(x,y,z,N);
-
-	pop = calloc(Popsize,sizeof(PSOINDIVIDUAL));
-
+	//根据构型和原子数读取坐标
+	ReadCood1(shape,N,&instance.cood);
+	
+	//如果需要排序坐标则从里到外排序坐标
+	if(instance.para.needOrderCood == 1)
+		orderCoodFromCore(instance.cood.x,instance.cood.y,instance.cood.z,instance.N);
+	
+	//设置随机种子，不然每次启动随机值都一样
+	//每个个体随机产生初始解 和 10组交换子
 	srand((unsigned)time(NULL));
-	for(i=0;i<Popsize;i++){
-		pop[i].chrom = calloc(N,sizeof(int));
-		L0NoteInt2(pop[i].chrom,N,A,x,y,z);
-		pop[i].swapList = initSwapSequence(10,N);
-		pop[i].pbest = calloc(1,sizeof(PSOINDIVIDUAL));
-		pop[i].pbest->chrom = calloc(N,sizeof(int));
-	}
-
-	PSO2_Start(shape,N,A,pop,x,y,z,atomA,atomB,energy,Popsize,w,rate,Output,PSOYesImprove);
-
-	free(x);
-	free(y);
-	free(z);
-	for(i = 0;i < Popsize;i++){
-		free(pop[i].chrom);
-		free(pop[i].pbest->chrom);
-		free(pop[i].pbest);
-		swapNext = pop[i].swapList;
-		while(swapNext != NULL)
-		{
-			swap = swapNext;
-			swapNext = swap->next;
-			free(swap);
-		}
-	}
-	free(pop);
-}
-
-
-void printfPSOSwap(PSOSWAP *head)
-{
-	int i = 0;
-	PSOSWAP *p;
-	p = head;
-	while(p!=NULL)
+	for( i = 0; i < instance.para.popSize;i++)
 	{
-		printf("%5d-%d-%d\t",i,p->element[0],p->element[1]);
-		p = p->next;
-		i++;
+		MixNoteInt(instance.pop[i].chrom, instance.N, &instance.atomNum);
+		instance.pop[i].swapList = initSwapSequence(10,N);
+	}
+
+	//开始进行遗传算法
+	PSO_Start(&instance,output);
+	
+	//释放遗传算法实例中开辟的空间
+	for(i = 0;i < instance.para.popSize;i++)
+		PSOIndividual_Free(&instance.pop[i]);
+	free(instance.pop);
+	Cood_Free(&instance.cood);
+	AtomNum_Free(&instance.atomNum);
+	Alloy_Free(&instance.alloy);
+}
+
+void PSO_Start(PSOInstance *instance,char *output)
+{
+	int i;
+	FILE *fp = NULL;
+	double E0,E1;
+	int tig = 0;
+	int step = 0;
+	char *Line_End;
+	double a0;
+
+	srand((unsigned)time(NULL));
+	instance->dis.R = calloc( instance->N*instance->N,sizeof(double));
+	a0 = getLatticeParameter( &instance->alloy );
+
+	Line_End = StoragePath( instance->shape, instance->N, &instance->alloy, &instance->atomNum, output );
+
+	Distance1(&instance->cood,&instance->dis);
+	for(i=0;i<instance->N;i++){
+		instance->cood.x[i] = instance->cood.x[i]*a0/(instance->dis.Rmin*sqrt(2));
+		instance->cood.y[i] = instance->cood.y[i]*a0/(instance->dis.Rmin*sqrt(2));
+		instance->cood.z[i] = instance->cood.z[i]*a0/(instance->dis.Rmin*sqrt(2));
+	}
+	Distance1(&instance->cood,&instance->dis);
+
+	//初始化
+	for( i = 0; i < instance->para.popSize; i++)
+		instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+	updatePbest( instance );
+	updateGbest( instance );
+	
+	E0 = instance->gbest->energy;
+	
+	printf( "\nInit PSO...\n" );
+	PSO_PrintMsg( instance );
+
+	printf( "\nStart PSO...\n" );
+	PSO_EnergyFile( instance, &fp, Line_End );
+
+	while(1)
+	{
+		instance->clocks++;
+
+		//更新交换序
+		updateSwapList( instance );
+
+		//更新位置
+		upDateChorm( instance );
+
+		for( i = 0; i < instance->para.popSize; i++)
+			instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+
+		//更新pbest
+		updatePbest( instance );
+
+		//位置调整
+		if( instance->para.needAdjustment == 1 )
+			PSOMutation( instance );
+
+		//更新gbest
+		updateGbest( instance );
+
+		E1 = instance->gbest->energy;
+		if( E1-E0<0.001 && E1-E0>-0.001){
+			tig = 0;
+			step ++;
+		}	else {
+			tig = 1;
+			step = 0;
+			instance->IJKL++;
+		}
+		if(tig == 1 || (step!=0 && step % 100 == 0))
+		{	
+			E0 = E1;
+			printf( "clocks=%d\tIJKL=%d\tstep=%d\n", instance->clocks, instance->IJKL, step );
+			printf( "  E   =%f\n", E0 );
+
+			PSO_EnergyFile( instance, &fp, Line_End );
+			PSO_ResultFile( instance, Line_End );
+		}
+
+		if( step > instance->para.convergenceGenerations )	break;
+	}
+
+	fclose(fp);
+	free( instance->dis.R );
+
+	PSO_ResultFile( instance, Line_End );
+	
+	free(Line_End);
+}
+
+void updatePbest( PSOInstance *instance )
+{
+	int i;
+
+	for( i = 0; i < instance->para.popSize; i++ )
+	{
+		if( instance->pop[i].energy <= instance->pop[i].pbest->energy)
+			changePSOIndividual( instance->pop[i].pbest, &instance->pop[i], instance->N );
+	}
+}
+
+void updateGbest( PSOInstance *instance )
+{
+	int i;
+	
+	if( instance->gbest == NULL ) instance->gbest = instance->pop[0].pbest;
+	
+	for( i = 0 ; i < instance->para.popSize; i++ )
+	{
+		if( instance->pop[i].pbest->energy <= instance->gbest->energy)
+		{
+			instance->gbest = instance->pop[i].pbest;
+		}
+	}
+}
+
+void updateSwapList( PSOInstance *instance )
+{
+	int i;
+	PSOSWAP *swapList1,*swapList2;
+
+	for( i = 0; i < instance->para.popSize; i++ )
+	{
+		swapList1 = swapSubtraction( instance->gbest, &instance->pop[i], instance->N );
+		swapList2 = swapSubtraction( instance->pop[i].pbest, &instance->pop[i], instance->N );
+		instance->pop[i].swapList = swapAddition( instance->para.w, &instance->pop[i], swapList1, swapList2 );
+	}
+}
+
+void upDateChorm( PSOInstance *instance )
+{
+	int i;
+	int temp0,temp1;
+	PSOINDIVIDUAL *p;
+	PSOSWAP *s;
+	
+	for( i = 0; i < instance->para.popSize; i++ )
+	{
+		p = &instance->pop[i];
+		s = p->swapList->next;
+		while(s != NULL)
+		{
+			temp0 = p->chrom[s->element[0]];
+			temp1 = p->chrom[s->element[1]];
+			if(temp0 != temp1)
+			{
+				p->chrom[s->element[0]] = temp1;
+				p->chrom[s->element[1]] = temp0;
+			}
+			s = s->next;
+		}
+	}
+}
+
+void PSOMutation( PSOInstance *instance )
+{
+	int i,randN1,randN2,tempChrom;
+	double tempE,r;
+	PSOINDIVIDUAL *pbest;
+
+	for( i = 0; i < instance->para.popSize; i++ )
+	{
+		r = RAND1;
+		if( r < instance->para.rate )
+		{
+			pbest = instance->pop[i].pbest;
+			randN1 = RANDINT( instance->N );
+			randN2 = RANDINT( instance->N );
+			while( pbest->chrom[randN1] == pbest->chrom[randN2])
+			{
+				randN1 = RANDINT( instance->N );
+				randN2 = RANDINT( instance->N );
+			}
+			tempChrom = pbest->chrom[randN1];
+			pbest->chrom[randN1] = pbest->chrom[randN2];
+			pbest->chrom[randN2] = tempChrom;
+			tempE = GetEnergyFunction1(instance->energyType)(pbest->chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N); 
+			if(tempE <= pbest->energy)
+			{
+				pbest->energy = tempE;
+				continue;
+			} 
+			tempChrom = pbest->chrom[randN1];
+			pbest->chrom[randN1] = pbest->chrom[randN2];
+			pbest->chrom[randN2] = tempChrom;
+		}
+	}
+}
+
+void PSO_PrintMsg(PSOInstance *instance)
+{
+	int i,tempNum;
+	ATOM tempATOM;
+
+	printf( "shape=%s\tN=%d\n", instance->shape, instance->N );
+	printf( "POPSIZE=%d\tw=%lf\trate=%lf\n", instance->para.popSize, instance->para.w, instance->para.rate );
+	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
+	{
+		tempATOM = instance->alloy.atoms[i];
+		tempNum = instance->atomNum.numberOfAtom[i];
+		printf("%s=%.3f\t",GetAtomPara(tempATOM).name,(double)tempNum / instance->N);
 	}
 	printf("\n");
+	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
+	{
+		tempATOM = instance->alloy.atoms[i];
+		tempNum = instance->atomNum.numberOfAtom[i];
+		printf("%s=%d\t",GetAtomPara(tempATOM).name,tempNum);
+	}
+	printf("\n");
+	printf("best=%lf\n",instance->gbest->energy);
+}
+
+void PSO_EnergyFile( PSOInstance *instance, FILE **fp, char *output )
+{
+	char Line_Date[200];
+
+	if ( *fp == NULL )
+	{
+		strcpy(Line_Date,output);
+		strcat(Line_Date,"\\energy.txt");
+		*fp = fopen(Line_Date,"w");
+		fprintf(*fp,"\t%d\n",instance->N);
+	}
+	fprintf(*fp,"%6d\t%6d\t%lf\n",instance->clocks,instance->IJKL,instance->gbest->energy);
+}
+
+void PSO_ResultFile( PSOInstance *instance, char *output )
+{
+	char Line_Date[200];
+
+	//生成结果文件，文件路径名：[output]\\result.txt
+	strcpy(Line_Date,output);
+	strcat(Line_Date,"\\result.txt");			
+	printResult(instance->gbest->chrom, instance->N, &instance->cood, Line_Date);
+	
+	//生成绘图文件，文件路径名：[output]\\Diamond.txt
+	strcpy(Line_Date,output);
+	strcat(Line_Date,"\\Diamond.txt");
+	printDiamond(instance->gbest->chrom, instance->N, &instance->cood, &instance->alloy, Line_Date);
+}
+
+void PSOIndividual_Init(PSOINDIVIDUAL *one,int N)
+{
+	one->chrom = calloc(N,sizeof(int));
+	one->energy = 0;
+	one->swapList = NULL;
+	one->pbest = calloc(1,sizeof(PSOINDIVIDUAL));
+	one->pbest->chrom = calloc(N,sizeof(int));
+}
+
+void changePSOIndividual(PSOINDIVIDUAL *one,PSOINDIVIDUAL *two,int N)
+{
+	int i;
+
+	one->energy=two->energy;
+	for(i=0;i<N;i++){
+		one->chrom[i] = two->chrom[i];
+	}
+}
+
+void PSOIndividual_Free(PSOINDIVIDUAL *one)
+{
+	PSOSWAP *swap,*swapNext;
+
+	free(one->chrom);
+	one->chrom = NULL;
+	one->energy = 0;
+	swapNext = one->swapList;
+	while(swapNext != NULL)
+	{
+		swap = swapNext;
+		swapNext = swap->next;
+		free(swap);
+	}
+	one->swapList = NULL;
+	free(one->pbest->chrom);
+	free(one->pbest);
+	one->pbest = NULL;
 }
 
 void printfPSOIndividual(PSOINDIVIDUAL *individual,int N)
@@ -207,150 +372,35 @@ void printfPSOIndividual(PSOINDIVIDUAL *individual,int N)
 	printf("\n");
 }
 
-void PSO2_Start(char *shape,int N,int A,PSOINDIVIDUAL *pop,double *x,double *y,double *z,ATOM atomA,ATOM atomB,PE energy,int POPSIZE,double w,double rate,char *Output,PSOIMPROVE improve)
+PSOSWAP* initSwapSequence(int size,int N)
 {
 	int i;
-	FILE *fp;
-	double E0,E1;
-	int clocks = 0;
-	int IJKL = 0;
-	int tig = 0;
-	int step = 0;
-	char *Line_End;
-	char Line_Date[100];
-	double *R;
-	PSOINDIVIDUAL *best_pop;
-	double a0;
-	int B;
-	double biliA,biliB;
-	char *nameA,*nameB;
-
-	srand((unsigned)time(NULL));
-	B = N - A;
-	R = calloc(N*N,sizeof(double));
-	a0 = getLatticeParameter3(atomA,atomB,atomB);
-	nameA = GetAtomPara(atomA).name; nameB = GetAtomPara(atomB).name;
-	biliA = (double)A / N;
-	biliB = (double)B / N;
-	Line_End = StoragePath(shape,N,A,B,atomA,atomB,atomB,Output);
-
-	Distance(x,y,z,R,N);
-	for(i=0;i<N;i++){
-		x[i] = x[i]*a0/(Rmin*sqrt(2));
-		y[i] = y[i]*a0/(Rmin*sqrt(2));
-		z[i] = z[i]*a0/(Rmin*sqrt(2));
-	}
-	Distance(x,y,z,R,N);
-
-	SetEnergyPow(atomA,atomB,atomB);
-	setupJohnson();
-//	setEnergyNewModel(atomA,atomB,R,N);
-
-	//初始化
-	for(i=0;i<POPSIZE;i++){
-		pop[i].energy = GetCutEnergyFunction(energy)(pop[i].chrom,R,atomA,atomB,atomB,N,a0);
-	//	pop[i].energy = QSCEnergyNewModel(pop[i].chrom,atomA,atomB,N);
-		changePSOIndividual(pop[i].pbest,&(pop[i]),N);
-	}
+	int rand1=0,rand2=1;
+	PSOSWAP *tempSwap,*swap,*startSwap;
 	
-	best_pop = pop[0].pbest;
-	updateGbest(&best_pop,pop,POPSIZE);
-	
-	E0 = best_pop->energy;
-	E1 = E0;
-	
-	printf("\nInit PSO...\n");
-	printf("shape=%s\tN=%d\n",shape,N);
-	printf("POPSIZE=%d\tw=%lf\trate=%lf\n",POPSIZE,w,rate);
-	printf("biliA=%.3f\tbiliB=%.3f\n",biliA,biliB);
-	printf("%s=%d\t%s=%d\t\n",nameA,A,nameB,B);	
-	printf("best=%lf\n",best_pop->energy);
-
-
-	printf("\nStart PSO...\n");
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\energy.txt");
-	fp = fopen(Line_Date,"w");
-	fprintf(fp,"\t%d\t%3.1lf\n",N,biliA);
-	fprintf(fp,"%6d\t%6d\t%lf\n",clocks,IJKL,E0);
-
-	while(1)
+	startSwap = creatSwap(0,0);
+	swap = startSwap;
+	for(i=0;i<size;i++)
 	{
-		clocks++;
-
-		//更新交换序
-		updateSwapList(w,pop,best_pop,POPSIZE,N);
-
-		//更新位置
-		upDateChorm(pop, POPSIZE);
-
-		//更新pbest
-		updatePbest(R, pop,atomA,atomB,energy,POPSIZE,N);
-		
-		//位置调整
-		if(improve == PSOYesImprove)
-			PSOMutation(rate,R,pop,atomA,atomB,energy,POPSIZE,N);
-
-		//更新gbest
-		updateGbest(&best_pop,pop,POPSIZE);
-
-		E1 = best_pop->energy;
-		if( E1-E0<0.001 && E1-E0>-0.001){
-			tig = 0;
-			step ++;
-		}	else {
-			tig = 1;
-			step = 0;
-			IJKL++;
-		}
-		if(tig == 1 || (step!=0 && step % 100 == 0))
-		{	
-			E0 = E1;
-			printf("clocks=%d\tIJKL=%d\tstep=%d\n",clocks,IJKL,step);
-			printf("  E   =%f\n",E0);
-			fprintf(fp,"%6d\t%6d\t%lf\n",clocks,IJKL,E0);
-
-			strcpy(Line_Date,Line_End);
-			strcat(Line_Date,"\\result.txt");			
-			printResult3(best_pop->chrom,x,y,z,N,0,Line_Date);
-
-			strcpy(Line_Date,Line_End);
-			strcat(Line_Date,"\\Diamond.txt");
-			printDiamond3(best_pop->chrom,x,y,z,atomA,atomB,atomB,N,Line_Date);
-		}
-
-		if(step>1000)
-			break;
-
+		do{
+			rand1 = (int)(N*RAND1);
+			rand2 = (int)(N*RAND1);
+		}while(rand1==rand2);
+		tempSwap = creatSwap(rand1,rand2);
+		swap->next = tempSwap;
+		swap = swap->next;
 	}
-	fclose(fp);
-	free(R);
-
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\result.txt");			
-	printResult3(best_pop->chrom,x,y,z,N,0,Line_Date);
-
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\Diamond.txt");
-	printDiamond3(best_pop->chrom,x,y,z,atomA,atomB,atomB,N,Line_Date);
-	
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\result.txt");
-	printData(Line_Date,Line_End,N);
-	
-//	freeSetEnergyNewModel();
+	return startSwap;
 }
 
-void updateSwapList(double w, PSOINDIVIDUAL *pop, PSOINDIVIDUAL *gbest, int POPSIZE, int N)
+PSOSWAP* creatSwap(int element1,int element2)
 {
-	int i;
-	PSOSWAP *swapList1,*swapList2;
-	for(i = 0; i < POPSIZE; i++)
-	{
-		swapList1 = swapSubtraction(gbest,&pop[i],N);
-		swapList2 = swapSubtraction(pop[i].pbest,&pop[i],N);
-		pop[i].swapList = swapAddition(w,&pop[i],swapList1,swapList2);
-	}
+	PSOSWAP *swap;
+	swap = (PSOSWAP *)malloc(sizeof(PSOSWAP));
+	swap->element[0] = element1;
+	swap->element[1] = element2;
+	swap->next = NULL;
+	return swap;
 }
 
 PSOSWAP* swapSubtraction(PSOINDIVIDUAL *best, PSOINDIVIDUAL *pop, int N)
@@ -388,7 +438,6 @@ PSOSWAP* swapSubtraction(PSOINDIVIDUAL *best, PSOINDIVIDUAL *pop, int N)
 	free(second);
 	return head;
 }
-
 
 PSOSWAP* swapAddition(double w, PSOINDIVIDUAL *pop, PSOSWAP *swapList1, PSOSWAP *swapList2)
 {
@@ -433,154 +482,21 @@ PSOSWAP* swapMultiplication(double rate, PSOSWAP *swapList, PSOSWAP *newSwapList
 	return newSwapList;
 }
 
-void upDateChorm(PSOINDIVIDUAL *pop, int POPSIZE)
+void printfPSOSwap(PSOSWAP *head)
 {
-	int i;
-	int temp0,temp1;
-	PSOINDIVIDUAL *p;
-	PSOSWAP *s;
-	
-	for(i=0;i<POPSIZE;i++)
+	int i = 0;
+	PSOSWAP *p;
+	p = head;
+	while(p!=NULL)
 	{
-		p = &pop[i];
-		s = p->swapList->next;
-		while(s != NULL)
-		{
-			temp0 = p->chrom[s->element[0]];
-			temp1 = p->chrom[s->element[1]];
-			if(temp0 != temp1)
-			{
-				p->chrom[s->element[0]] = temp1;
-				p->chrom[s->element[1]] = temp0;
-			}
-			s = s->next;
-		}
+		printf("%5d-%d-%d\t",i,p->element[0],p->element[1]);
+		p = p->next;
+		i++;
 	}
+	printf("\n");
 }
 
-void PSOMutation(double rate, double *R, PSOINDIVIDUAL *pop, ATOM atomA, ATOM atomB, PE energy, int POPSIZE, int N)
-{
-	int i,randN1,randN2,tempChrom;
-	double tempE,r;
-	PSOINDIVIDUAL *pbest;
-
-	for(i=0;i<POPSIZE;i++)
-	{
-		r = RAND1;
-		if(r < rate)
-		{
-			pbest = pop[i].pbest;
-			randN1 = (int)(N * RAND1);
-			randN2 = (int)(N * RAND1);
-			while(pbest->chrom[randN1] == pbest->chrom[randN2])
-			{
-				randN1 = (int)(N * RAND1);
-				randN2 = (int)(N * RAND1);
-			}
-			tempChrom = pbest->chrom[randN1];
-			pbest->chrom[randN1] = pbest->chrom[randN2];
-			pbest->chrom[randN2] = tempChrom;
-			tempE = GetCutEnergyFunction(energy)(pbest->chrom,R,atomA,atomB,atomB,N,getLatticeParameter3(atomA,atomB,atomB)); 
-			if(tempE <= pbest->energy)
-			{
-				pbest->energy = tempE;
-				continue;
-			} 
-			tempChrom = pbest->chrom[randN1];
-			pbest->chrom[randN1] = pbest->chrom[randN2];
-			pbest->chrom[randN2] = tempChrom;
-		}
-	}
-}
-
-
-PSOSWAP* initSwapSequence(int size,int N)
-{
-	int i;
-	int rand1=0,rand2=1;
-	PSOSWAP *tempSwap,*swap,*startSwap;
-	
-	startSwap = creatSwap(0,0);
-	swap = startSwap;
-	for(i=0;i<size;i++)
-	{
-		do{
-			rand1 = (int)(N*RAND1);
-			rand2 = (int)(N*RAND1);
-		}while(rand1==rand2);
-		tempSwap = creatSwap(rand1,rand2);
-		swap->next = tempSwap;
-		swap = swap->next;
-	}
-	return startSwap;
-}
-
-PSOSWAP* creatSwap(int element1,int element2)
-{
-	PSOSWAP *swap;
-	swap = (PSOSWAP *)malloc(sizeof(PSOSWAP));
-	swap->element[0] = element1;
-	swap->element[1] = element2;
-	swap->next = NULL;
-	return swap;
-}
-
-void updatePbest(double *R, PSOINDIVIDUAL *pop, ATOM atomA, ATOM atomB, PE energy, int POPSIZE, int N)
-{
-	int i;
-
-	for(i=0;i<POPSIZE;i++)
-	{
-		pop[i].energy = GetCutEnergyFunction(energy)(pop[i].chrom,R,atomA,atomB,atomB,N,getLatticeParameter3(atomA,atomB,atomB));
-		if(pop[i].energy <= pop[i].pbest->energy)
-		{
-			changePSOIndividual(pop[i].pbest,&pop[i],N);
-		}
-	}
-}
-
-void updateGbest(PSOINDIVIDUAL **best_pop,PSOINDIVIDUAL *pop,int POPSIZE)
-{
-	int i;
-	
-	for(i =0 ;i< POPSIZE;i++)
-	{
-		if(pop[i].pbest->energy <= (*best_pop)->energy)
-		{
-			*best_pop = pop[i].pbest;
-		}
-	}
-}
-
-
-
-void changePSOIndividual(PSOINDIVIDUAL *one,PSOINDIVIDUAL *two,int N){
-	int i;
-//	PSOSWAP *swap1,*swap2;
-	one->energy=two->energy;
-
-	for(i=0;i<N;i++){
-		one->chrom[i] = two->chrom[i];
-	}
-	
-/*	swap1 = one->swapList;
-	while(swap1 != NULL){
-		swap2 = swap1;
-		swap1 = swap1->next;
-		free(swap2);
-	}
-	one->swapList = NULL;
-
-	swap1 = one->swapList;
-	swap2 = two->swapList;
-	while(swap2 != NULL){
-		swap1 = creatSwap(swap2->element[0],swap2->element[1]);
-		swap1 = swap1->next;
-		swap2 = swap2->next;
-	}*/
-}
-
-void PSO3_InitWithMixing(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATOM atomC,PE energy,int Popsize,double w,double rate,char *Output)
+void PSO2_InitWithFromCore(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,int Popsize,double w,double rate,char *output)
 {
 	int i;
 	double *x,*y,*z;
@@ -599,13 +515,13 @@ void PSO3_InitWithMixing(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATO
 	srand((unsigned)time(NULL));
 	for(i=0;i<Popsize;i++){
 		pop[i].chrom = calloc(N,sizeof(int));
-		MixNoteInt3(pop[i].chrom,N,A,B);
+		FromCoreNoteInt3(pop[i].chrom,N,A,N-A,x,y,z);
 		pop[i].swapList = initSwapSequence(10,N);
 		pop[i].pbest = calloc(1,sizeof(PSOINDIVIDUAL));
 		pop[i].pbest->chrom = calloc(N,sizeof(int));
 	}
 
-	PSO3_Start(shape,N,A,B,pop,x,y,z,atomA,atomB,atomC,energy,Popsize,w,rate,Output);
+	//	PSO2_Start(shape,N,A,pop,x,y,z,atomA,atomB,energy,Popsize,w,rate,output,PSOYesImprove);
 
 	free(x);
 	free(y);
@@ -625,181 +541,93 @@ void PSO3_InitWithMixing(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATO
 	free(pop);
 }
 
-void PSO3_Start(char *shape, int N, int A, int B, PSOINDIVIDUAL *pop,double *x, double *y, double *z,ATOM atomA, ATOM atomB, ATOM atomC, PE energy, int POPSIZE, double w, double rate, char *Output)
+
+void PSO2_InitWithPhase(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,int Popsize,double w,double rate,char *output)
 {
 	int i;
-	FILE *fp;
-	double E0,E1;
-	int clocks = 0;
-	int IJKL = 0;
-	int tig = 0;
-	int step = 0;
-	char *Line_End;
-	char Line_Date[100];
-	double *R;
-	PSOINDIVIDUAL *best_pop;
-	double a0;
-	int C;
-	double biliA,biliB,biliC;
-	char *nameA,*nameB,*nameC;
+	double *x,*y,*z;
+	PSOINDIVIDUAL *pop;
+	PSOSWAP *swap,*swapNext;
+
+	x = calloc(N,sizeof(double));
+	y = calloc(N,sizeof(double));
+	z = calloc(N,sizeof(double));
+
+	ReadCood(shape,N,x,y,z);
+	orderCoodFromCore(x,y,z,N);
+
+	pop = calloc(Popsize,sizeof(PSOINDIVIDUAL));
 
 	srand((unsigned)time(NULL));
-	C = N - A - B;
-	R = calloc(N*N,sizeof(double));
-	a0 = getLatticeParameter3(atomA,atomB,atomC);
-	nameA = GetAtomPara(atomA).name; nameB = GetAtomPara(atomB).name; nameC = GetAtomPara(atomC).name;
-	biliA = (double)A / N; biliB = (double)B / N; biliC = 1 - biliA - biliB;
-	Line_End = StoragePath(shape,N,A,B,atomA,atomB,atomC,Output);
-
-	Distance(x,y,z,R,N);
-	for(i=0;i<N;i++){
-		x[i] = x[i]*a0/(Rmin*sqrt(2));
-		y[i] = y[i]*a0/(Rmin*sqrt(2));
-		z[i] = z[i]*a0/(Rmin*sqrt(2));
+	for(i=0;i<Popsize;i++){
+		pop[i].chrom = calloc(N,sizeof(int));
+		PhaseSeparationNoteInt2(pop[i].chrom,N,A,x,y,z);
+		pop[i].swapList = initSwapSequence(10,N);
+		pop[i].pbest = calloc(1,sizeof(PSOINDIVIDUAL));
+		pop[i].pbest->chrom = calloc(N,sizeof(int));
 	}
-	Distance(x,y,z,R,N);
 
-	SetEnergyPow(atomA,atomB,atomC);
-	setupJohnson();
+	//	PSO2_Start(shape,N,A,pop,x,y,z,atomA,atomB,energy,Popsize,w,rate,output,PSOYesImprove);
 
-	//初始化
-	for(i=0;i<POPSIZE;i++){
-		pop[i].energy = GetCutEnergyFunction(energy)(pop[i].chrom,R,atomA,atomB,atomC,N,a0);
-		changePSOIndividual(pop[i].pbest,&(pop[i]),N);
-	}
-	
-	best_pop = pop[0].pbest;
-	updateGbest(&best_pop,pop,POPSIZE);
-	
-	E0 = best_pop->energy;
-	E1 = E0;
-	
-	printf("\nInit PSO...\n");
-	printf("shape=%s\tN=%d\n",shape,N);
-	printf("POPSIZE=%d\tw=%lf\trate=%lf\n",POPSIZE,w,rate);
-	printf("biliA=%.3f\tbiliB=%.3f\tbiliC=%.3f\n",biliA,biliB,biliC);
-	printf("%s=%d\t%s=%d\t%s=%d\n",nameA,A,nameB,B,nameC,C);	
-	printf("best=%lf\n",best_pop->energy);
-
-
-	printf("\nStart PSO...\n");
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\energy.txt");
-	fp = fopen(Line_Date,"w");
-	fprintf(fp,"\t%d\t%3.1lf\n",N,biliA);
-	fprintf(fp,"%6d\t%6d\t%lf\n",clocks,IJKL,E0);
-
-	while(1)
-	{
-		clocks++;
-
-		//更新交换序
-		updateSwapList(w,pop,best_pop,POPSIZE,N);
-
-		//更新位置
-		upDateChorm(pop, POPSIZE);
-
-		//更新pbest
-		updatePbest3(R, pop,atomA,atomB,atomC,energy,POPSIZE,N);
-		
-		//位置调整
-		//	if(improve == PSOYesImprove)
-			PSOMutation3(rate,R,pop,atomA,atomB,atomC,energy,POPSIZE,N);
-
-		//更新gbest
-		updateGbest(&best_pop,pop,POPSIZE);
-
-		E1 = best_pop->energy;
-		if( E1-E0<0.001 && E1-E0>-0.001){
-			tig = 0;
-			step ++;
-		}	else {
-			tig = 1;
-			step = 0;
-			IJKL++;
-		}
-		if(tig == 1 || (step!=0 && step % 100 == 0))
-		{	
-			E0 = E1;
-			printf("clocks=%d\tIJKL=%d\tstep=%d\n",clocks,IJKL,step);
-			printf("  E   =%f\n",E0);
-			fprintf(fp,"%6d\t%6d\t%lf\n",clocks,IJKL,E0);
-
-			strcpy(Line_Date,Line_End);
-			strcat(Line_Date,"\\result.txt");			
-			printResult3(best_pop->chrom,x,y,z,N,0,Line_Date);
-
-			strcpy(Line_Date,Line_End);
-			strcat(Line_Date,"\\Diamond.txt");
-			printDiamond3(best_pop->chrom,x,y,z,atomA,atomB,atomC,N,Line_Date);
-		}
-
-		if(step>1000)
-			break;
-
-	}
-	fclose(fp);
-	free(R);
-
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\result.txt");			
-	printResult3(best_pop->chrom,x,y,z,N,0,Line_Date);
-
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\Diamond.txt");
-	printDiamond3(best_pop->chrom,x,y,z,atomA,atomB,atomB,N,Line_Date);
-	
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\result.txt");
-	printData(Line_Date,Line_End,N);
-	
-}
-
-void PSOMutation3(double rate, double *R, PSOINDIVIDUAL *pop, ATOM atomA, ATOM atomB, ATOM atomC, PE energy, int POPSIZE, int N)
-{
-	int i,randN1,randN2,tempChrom;
-	double tempE,r;
-	PSOINDIVIDUAL *pbest;
-
-	for(i=0;i<POPSIZE;i++)
-	{
-		r = RAND1;
-		if(r < rate)
+	free(x);
+	free(y);
+	free(z);
+	for(i = 0;i < Popsize;i++){
+		free(pop[i].chrom);
+		free(pop[i].pbest->chrom);
+		free(pop[i].pbest);
+		swapNext = pop[i].swapList;
+		while(swapNext != NULL)
 		{
-			pbest = pop[i].pbest;
-			randN1 = (int)(N * RAND1);
-			randN2 = (int)(N * RAND1);
-			while(pbest->chrom[randN1] == pbest->chrom[randN2])
-			{
-				randN1 = (int)(N * RAND1);
-				randN2 = (int)(N * RAND1);
-			}
-			tempChrom = pbest->chrom[randN1];
-			pbest->chrom[randN1] = pbest->chrom[randN2];
-			pbest->chrom[randN2] = tempChrom;
-			tempE = GetCutEnergyFunction(energy)(pbest->chrom,R,atomA,atomB,atomB,N,getLatticeParameter3(atomA,atomB,atomC)); 
-			if(tempE <= pbest->energy)
-			{
-				pbest->energy = tempE;
-				continue;
-			} 
-			tempChrom = pbest->chrom[randN1];
-			pbest->chrom[randN1] = pbest->chrom[randN2];
-			pbest->chrom[randN2] = tempChrom;
+			swap = swapNext;
+			swapNext = swap->next;
+			free(swap);
 		}
 	}
+	free(pop);
 }
 
-void updatePbest3(double *R, PSOINDIVIDUAL *pop, ATOM atomA, ATOM atomB, ATOM atomC, PE energy, int POPSIZE, int N)
+void PSO2_InitWithL0(char *shape,int N,int A,ATOM atomA,ATOM atomB,PE energy,int Popsize,double w,double rate,char *output)
 {
 	int i;
+	double *x,*y,*z;
+	PSOINDIVIDUAL *pop;
+	PSOSWAP *swap,*swapNext;
 
-	for(i=0;i<POPSIZE;i++)
-	{
-		pop[i].energy = GetCutEnergyFunction(energy)(pop[i].chrom,R,atomA,atomB,atomC,N,getLatticeParameter3(atomA,atomB,atomC));
-		if(pop[i].energy <= pop[i].pbest->energy)
+	x = calloc(N,sizeof(double));
+	y = calloc(N,sizeof(double));
+	z = calloc(N,sizeof(double));
+
+	ReadCood(shape,N,x,y,z);
+	orderCoodFromCore(x,y,z,N);
+
+	pop = calloc(Popsize,sizeof(PSOINDIVIDUAL));
+
+	srand((unsigned)time(NULL));
+	for(i=0;i<Popsize;i++){
+		pop[i].chrom = calloc(N,sizeof(int));
+		L0NoteInt2(pop[i].chrom,N,A,x,y,z);
+		pop[i].swapList = initSwapSequence(10,N);
+		pop[i].pbest = calloc(1,sizeof(PSOINDIVIDUAL));
+		pop[i].pbest->chrom = calloc(N,sizeof(int));
+	}
+
+	//	PSO2_Start(shape,N,A,pop,x,y,z,atomA,atomB,energy,Popsize,w,rate,output,PSOYesImprove);
+
+	free(x);
+	free(y);
+	free(z);
+	for(i = 0;i < Popsize;i++){
+		free(pop[i].chrom);
+		free(pop[i].pbest->chrom);
+		free(pop[i].pbest);
+		swapNext = pop[i].swapList;
+		while(swapNext != NULL)
 		{
-			changePSOIndividual(pop[i].pbest,&pop[i],N);
+			swap = swapNext;
+			swapNext = swap->next;
+			free(swap);
 		}
 	}
+	free(pop);
 }

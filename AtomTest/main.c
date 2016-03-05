@@ -21,62 +21,23 @@
 #include "Algorithm.h"	//算法的定义
 #include "Energy.h"		//势能的定义
 
-void testMixNote()
-{
-	int *note;
-	int N = 0;
-	int typeCount = 3;
-	int i = 0;
-
-	ATOMNUM atomNum = { NULL, typeCount};
-	atomNum.numberOfAtom = calloc(typeCount,sizeof(int));
-	for( i = 0; i < typeCount; i++ )
-	{
-		atomNum.numberOfAtom[i] = i + 1;
-		N += i + 1;
-	}
-	note = calloc(N,sizeof(int));
-	MixNoteInt(note,N,&atomNum);
-	for(i = 0; i < N; i++)
-		printf("%d\t",note[i]);
-	printf("\n");
-
-	MixNoteInt(note,N,&atomNum);
-	for(i = 0; i < N; i++)
-		printf("%d\t",note[i]);
-	printf("\n");
-
-		MixNoteInt(note,N,&atomNum);
-	for(i = 0; i < N; i++)
-		printf("%d\t",note[i]);
-	printf("\n");
-
-	free(atomNum.numberOfAtom);
-	free(note);
-}
-
 main()
-{ 
-	
-//	GAPARA para;
-//	ALLOY alloy;
-//	ATOMNUM atomNum;
-//	char shape[] = "CU";
-//	int N = 63;
-//
-//	GAPara_Init(&para);
-//	para.convergenceGenerations = 100;
-//	Alloy_Init(&alloy,Pt,Pd);
-//	AtomNum_Init(&atomNum,30,33);
-//	GA_InitWithMixing(shape,N,&atomNum,&alloy,QSC,&para,"111");
-//	
-//	Alloy_Free(&alloy);
-//	AtomNum_Free(&atomNum);
-//	printf("\n");
-	
-	GAPARA para;
-	GAPara_Init(&para);
-	GA2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"GA2_MIX");
+{ 	
+//	MCPARA para;
+//	MCPara_Init(&para);
+	//	MC2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"MC2");
+	//	MC3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"MC3");
+
+	//	GAPARA para;
+	//	GAPara_Init(&para);
+	//	para.convergenceGenerations = 100;
+//	GA2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"GA2_MIX");
+	//	GA3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"GA3");
+
+	//	PSOPARA para;
+	//	PSOPara_Init( &para );
+//	PSO2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"PSO2");
+	//	PSO3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
 
 	//算法：蒙特卡洛算法；
 	//初始结构：随机

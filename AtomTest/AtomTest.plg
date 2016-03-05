@@ -6,14 +6,14 @@
 --------------------Configuration: AtomTest - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP2557.tmp" with contents
+Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP7E52.tmp" with contents
 [
 /nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR"Debug/" /Fp"Debug/AtomTest.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
 "E:\学校\程序\GitHub\Nanoparticle\AtomTest\main.c"
-"E:\学校\程序\GitHub\Nanoparticle\AtomTest\GA.c"
+"E:\学校\程序\GitHub\Nanoparticle\AtomTest\PSO.c"
 ]
-Creating command line "cl.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP2557.tmp" 
-Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP2558.tmp" with contents
+Creating command line "cl.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP7E52.tmp" 
+Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP7E53.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/AtomTest.pdb" /debug /machine:I386 /out:"Debug/AtomTest.exe" /pdbtype:sept 
 ".\Debug\main.obj"
@@ -27,12 +27,11 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 ".\Debug\QSCNewModel.obj"
 ".\Debug\TBM.obj"
 ]
-Creating command line "link.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP2558.tmp"
+Creating command line "link.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP7E53.tmp"
 <h3>Output Window</h3>
 Compiling...
 main.c
-GA.c
-e:\学校\程序\github\nanoparticle\atomtest\ga.c(596) : warning C4101: 'Line_Date' : unreferenced local variable
+PSO.c
 Linking...
 Creating command line "bscmake.exe /nologo /o"Debug/AtomTest.bsc"  ".\Debug\main.sbr" ".\Debug\GA.sbr" ".\Debug\MC.sbr" ".\Debug\PSO.sbr" ".\Debug\Tool.sbr" ".\Debug\AEAM.sbr" ".\Debug\Johnson.sbr" ".\Debug\QSC.sbr" ".\Debug\QSCNewModel.sbr" ".\Debug\TBM.sbr""
 Creating browse info file...

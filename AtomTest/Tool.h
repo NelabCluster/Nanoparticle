@@ -46,10 +46,9 @@ void PhaseSeparationNoteInt2(int *note,int N,int A,double *x,double *y,double *z
 void ShellByShellNoteInt2(int *note, int N, double *x,double *y, double *z);
 //计算距离(x[],y[],z[],距离数组R,原子个数)
 void Distance(double *x,double *y,double *z,double *R,int N);
-void Distance1(COOD cood,COODDIS *dis);
+void Distance1(COOD *cood,COODDIS *dis);
 //返回存储相对地址
-char* StoragePath(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATOM atomC,char *Output);
-char* StoragePath1(char *shape,int N,ALLOY *alloy,ATOMNUM *atomNum,char *Output);
+char* StoragePath(char *shape,int N,ALLOY *alloy,ATOMNUM *atomNum,char *Output);
 //原子所在层
 int* Shell_Shape(char *shape,int N);
 int* Shell_Cood(double *x,double *y,double *z,int N);
@@ -127,8 +126,7 @@ double getLatticeParameter3(ATOM atom1,ATOM atom2,ATOM atom3);
             int atomTypeCount --- 原子
 * @return：double --- 晶格
 ****************************************/
-double getLatticeParameter(ATOM* atoms, int atomTypeCount);
-double getLatticeParameter1(ALLOY *alloy);
+double getLatticeParameter(ALLOY *alloy);
 
 void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N);
 

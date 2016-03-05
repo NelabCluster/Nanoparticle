@@ -442,14 +442,14 @@ void Distance(double *x,double *y,double *z,double *R,int N){
 	}
 }
 
-void Distance1(COOD cood,COODDIS* dis)
+void Distance1(COOD *cood,COODDIS* dis)
 {
 	int i,j;
-	int N = cood.N;
+	int N = cood->N;
 	double *R = dis->R;
-	double *x = cood.x,*y = cood.y,*z = cood.z;
+	double *x = cood->x,*y = cood->y,*z = cood->z;
 
-	dis->N = cood.N;
+	dis->N = N;
 	dis->Rmax = 0;
 	dis->Rmin = 10000;
 	for(i=0;i<N-1;i++)
@@ -467,38 +467,7 @@ void Distance1(COOD cood,COODDIS* dis)
 	}
 }
 
-char* StoragePath(char *shape,int N,int A,int B,ATOM atomA,ATOM atomB,ATOM atomC,char *Output)
-{
-	double biliA;
-	double biliB;
-	char Line[20];
-	char *Line_End;
-	
-	Line_End = calloc(100,sizeof(char));
-	biliA = (double)A / N;
-	biliB = (double)B / N;
-
-	strcpy(Line_End,Output);
-	mkdir(Line_End);
-	strcat(Line_End,"\\");
-	strcat(Line_End,GetAtomPara(atomA).name);
-	strcat(Line_End,GetAtomPara(atomB).name);
-	strcat(Line_End,GetAtomPara(atomC).name);
-	mkdir(Line_End);
-	strcat(Line_End,"\\");
-	strcat(Line_End,shape);
-	mkdir(Line_End);
-	sprintf(Line,"\\%d",N);
-	strcat(Line_End,Line);
-	mkdir(Line_End);
-	sprintf(Line,"\\%.3f-%.3f-%.3f",biliA,biliB,(1-biliA-biliB));
-	strcat(Line_End,Line);
-	mkdir(Line_End);
-
-	return Line_End;
-}
-
-char* StoragePath1(char *shape,int N,ALLOY *alloy,ATOMNUM *atomNum,char *Output)
+char* StoragePath(char *shape,int N,ALLOY *alloy,ATOMNUM *atomNum,char *Output)
 {
 	int i;
 	char Line[20];
@@ -1115,19 +1084,7 @@ double getLatticeParameter3(ATOM atom1,ATOM atom2,ATOM atom3)
 	return (GetAtomPara(atom1).a + GetAtomPara(atom2).a + GetAtomPara(atom3).a) / 3;
 }
 
-double getLatticeParameter(ATOM* atoms, int atomTypeCount)
-{
-	int i;
-	double atomLattice = 0;
-	for( i = 0; i < atomTypeCount; i++)
-	{
-		atomLattice += GetAtomPara(atoms[i]).a;
-	}
-	atomLattice /= atomTypeCount;
-	return atomLattice;
-}
-
-double getLatticeParameter1(ALLOY *alloy)
+double getLatticeParameter(ALLOY *alloy)
 {
 	int i;
 	double atomLattice = 0;
