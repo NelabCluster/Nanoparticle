@@ -110,6 +110,14 @@ SOURCE=.\Algorithm.h
 # End Source File
 # Begin Source File
 
+SOURCE=.\FISH.c
+# End Source File
+# Begin Source File
+
+SOURCE=.\FISH.H
+# End Source File
+# Begin Source File
+
 SOURCE=.\GA.c
 # End Source File
 # Begin Source File
