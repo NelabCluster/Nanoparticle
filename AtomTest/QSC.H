@@ -4,6 +4,7 @@
 */
 #pragma once
 #include "Base.h"
+#include "Tool.h"
 
 struct QSCAtom{
 	double n;

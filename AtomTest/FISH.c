@@ -105,7 +105,10 @@ void FISH_Start(FISHInstance *instance, char *output)
 		instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
 	
 	FISH_RefreshBest( instance );
-	
+		
+	E0 = instance->best.energy;
+	E1 = E0;
+
 	if( instance->para.selfAdaption == 1 )
 		FISH_SelAdaption( instance );
 
@@ -124,12 +127,16 @@ void FISH_Start(FISHInstance *instance, char *output)
 		if( instance->para.selfAdaption == 1 )
 			FISH_SelAdaption( instance );
 
+		FISH_RefreshVisual( instance );
+		
 		for( i = 0; i < instance->para.popSize; i ++ )
 		{
 			state = FISH_Follow( instance, i );
 			if( state != 1)
 			{
-				
+				state = FISH_Prey( instance, i );
+				if( state != 1 )
+					state = FISH_Swarm( instance, i );
 			}
 		}
 
@@ -183,14 +190,88 @@ char FISH_Follow( FISHInstance *instance, int index )
 	return ( bestInVisualIndex == -1 )?0:1;
 }
 
-void FISH_Prey( FISHInstance *instance, int i )
-{ }
+char FISH_Prey( FISHInstance *instance, int index )
+{ 
+	int i,randN1,randN2,tempChrom,POPSIZE,N;
+	double bestEnergyAfterSwap,tempE;
+	int swap[2];
+	FISHINDIVIDUAL *one;
 
-void FISH_Swarm( FISHInstance *instance, int i )
-{ }
+	POPSIZE = instance->para.popSize;
+	N = instance->N;
+	one = instance->pop + index;
+	bestEnergyAfterSwap = 0;
+	swap[0] = 0; swap[1] = 0;
+
+	for( i = 0; i < instance->para.tryNumber; i++ )
+	{
+		randN1 = RANDINT( N );
+		randN2 = RANDINT( N );
+		while( one->chrom[randN1] == one->chrom[randN2] )
+		{
+			randN1 = RANDINT( N );
+			randN2 = RANDINT( N );
+		}
+		tempChrom = one->chrom[randN1];
+		one->chrom[randN1] = one->chrom[randN2];
+		one->chrom[randN2] = tempChrom;
+		
+		tempE = GetEnergyFunction1(instance->energyType)(one->chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,N); 
+		
+		if( tempE < bestEnergyAfterSwap )
+		{
+			bestEnergyAfterSwap = tempE;
+			swap[0] = randN1;
+			swap[1] = randN2;
+		}
+
+		tempChrom = one->chrom[randN1];
+		one->chrom[randN1] = one->chrom[randN2];
+		one->chrom[randN2] = tempChrom;
+	}
+
+	if( bestEnergyAfterSwap  < one->energy )
+	{
+		one->energy = bestEnergyAfterSwap;
+		tempChrom = one->chrom[swap[0]];
+		one->chrom[swap[0]] = one->chrom[swap[1]];
+		one->chrom[swap[1]] = tempChrom;
+		FISH_RefreshVisualAtIndex( instance, index );
+	} else
+	{
+		bestEnergyAfterSwap = 0;
+		swap[0] = 0; swap[1] = 0;
+	}
+	
+	return ( bestEnergyAfterSwap == 0 )?0:1;
+}
+
+char FISH_Swarm( FISHInstance *instance, int i )
+{ return 0; }
 
 void FISH_SelAdaption( FISHInstance *instance )
-{ }
+{
+	int count,bb,tt,k;
+
+	if( instance->clocks < 300 )
+		instance->para.tryNumber = 10;
+	else
+		instance->para.tryNumber = (int)( 100*instance->clocks / instance->para.generation );
+			
+	if( instance->clocks == 0 )
+		instance->para.visual = (int)( instance->N / 8 );
+
+	if( instance->clocks%200 == 0 )
+	{
+		count = 0;
+		bb = RANDINT( instance->para.popSize );
+		for( k = 0; k < instance->para.popSize; k++ ){
+			tt = FISHIndividual_Dist( instance->pop+bb, instance->pop+k, instance->N );
+			count = count + tt;
+		}
+		instance->para.visual = (int) ( 0.5*count / instance->para.popSize );
+	}
+}
 
 void FISH_RefreshBest( FISHInstance *instance )
 { 
@@ -244,10 +325,42 @@ void FISH_RefreshVisualAtIndex( FISHInstance *instance, int index )
 }
 
 void FISH_PrintMsg(FISHInstance *instance)
-{ }
+{ 
+	int i,tempNum;
+	ATOM tempATOM;
+
+	printf( "shape=%s\tN=%d\n", instance->shape, instance->N );
+	printf( "POPSIZE=%d\ttryNumber=%d\tvisual=%lf\n", instance->para.popSize, instance->para.tryNumber, instance->para.visual );
+	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
+	{
+		tempATOM = instance->alloy.atoms[i];
+		tempNum = instance->atomNum.numberOfAtom[i];
+		printf( "%s=%.3f\t", GetAtomPara(tempATOM).name, (double)tempNum / instance->N );
+	}
+	printf("\n");
+	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
+	{
+		tempATOM = instance->alloy.atoms[i];
+		tempNum = instance->atomNum.numberOfAtom[i];
+		printf( "%s=%d\t", GetAtomPara(tempATOM).name, tempNum );
+	}
+	printf( "\n" );
+	printf( "best=%lf\n", instance->best.energy );
+}
 
 void FISH_EnergyFile(FISHInstance *instance, FILE **fp, char *output)
-{ }
+{
+ 	char Line_Date[200];
+
+	if ( *fp == NULL )
+	{
+		strcpy( Line_Date, output );
+		strcat( Line_Date, "\\energy.txt" );
+		*fp = fopen( Line_Date, "w" );
+		fprintf( *fp, "\t%d\n", instance->N );
+	}
+	fprintf( *fp, "%6d\t%6d\t%lf\n", instance->clocks, instance->IJKL, instance->best.energy );
+}
 
 void FISH_ResultFile( FISHInstance *instance, char *output )
 { }

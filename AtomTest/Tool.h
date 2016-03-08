@@ -35,9 +35,9 @@ void ReadCood1(char *shape,int N,COOD *cood);
 * @return：void --- 
 ****************************************/
 void ReadFile(char *Input,int *note,double *x,double *y,double *z,int N);
+void ReadFile1( char *input, int *note, COOD *cood, int N );
 
 //初始排列
-void MixNoteInt3(int *note,int N,int A,int B);
 void MixNoteInt(int *note, int N, ATOMNUM *atomNum);
 
 void CoreSurfaceNote3(int *note,int N,double *x,double *y,double *z,int surfaceLayer,int B);
@@ -47,53 +47,101 @@ void ShellByShellNoteInt2(int *note, int N, double *x,double *y, double *z);
 //计算距离(x[],y[],z[],距离数组R,原子个数)
 void Distance(double *x,double *y,double *z,double *R,int N);
 void Distance1(COOD *cood,COODDIS *dis);
-//返回存储相对地址
+
+/***************************************
+* @Name:StoragePath
+* @Purpose：根据构型尺寸合金类型和个数在文件夹下生成相应的路径
+			路径：[Output]\\构型名称\\原子总数\\合金类型\\原子比例
+			在该路径下存储结果文件和分析文件
+* @param：char *shape --- 构型名称
+            int N --- 原子总数
+            ALLOY *alloy --- 合金类型
+            ATOMNUM *atomNum --- 各类金属个数
+            char *Output --- 文件夹名称
+* @return：char* --- 
+****************************************/
 char* StoragePath(char *shape,int N,ALLOY *alloy,ATOMNUM *atomNum,char *Output);
+
 //原子所在层
 int* Shell_Shape(char *shape,int N);
 int* Shell_Cood(double *x,double *y,double *z,int N);
 
-void printResult3(int *note,double *x,double *y,double *z,int N,double bili,char *path);
-void printResult(int *note,int N,COOD *cood,char *path);
-void printDiamond3(int *note,double *x,double *y,double *z,ATOM atomA,ATOM atomB,ATOM atomC,int N,char *path);
+
+/***************************************
+* @Name:printResult
+* @Purpose：在文件路径名中输出结果文件
+			note：需要开辟过空间
+			cood: 需要初始化过
+			path：必须是txt文件，一般为 ...\\result.txt
+* @param：int *note --- 序列
+            int N --- 原子总数
+            COOD *cood --- 坐标
+            char *path --- 文件名路径
+* @return：void --- 
+****************************************/
+void printResult( int *note, int N, COOD *cood, char *path );
+
+/***************************************
+* @Name:printDiamond
+* @Purpose：在文件路径名中输出绘图文件
+			note：需要开辟过空间
+			cood：需要初始化过
+			alloy：需要初始化过
+			path：必须是txt文件，一般为 ...\\Diamond.txt
+* @param：int *note --- 序列
+            int N --- 原子总数
+            COOD *cood --- 坐标
+            ALLOY *alloy --- 合金
+            char *path --- 文件名路径
+* @return：void --- 
+****************************************/
 void printDiamond(int *note,int N,COOD *cood,ALLOY *alloy,char *path);
 
 void printData(char *Line_Date,char *Line_End,int N);
+
 //根据原子里质心距离排序坐标
 int* orderCoodFromCore(double *x,double *y,double *z,int N);
 int* OrderCoodAlongX(double *x,double *y,double *z,int N);
 void L0NoteInt2(int *note,int N,int A,double *x,double *y,double *z);
 
 /***************************************
-* @Name:CoodNum3
+* @Name:CoordinateNumber
 * @Purpose：配位数上各原子的统计
 * @param：char *input --- 输入文件
             int N --- 总原子数
-            char *Output --- 文件存储路径
+            char *output --- 文件存储路径
 * @return：void --- 
 ****************************************/
-void CoodNum3(char *input,int N,char *Output);
-
+void CoordinateNumber( char *input, int N, char *output );
 
 /***************************************
-* @Name:pairCorrelation3
+* @Name:coordinationNumberR
+* @Purpose：根据距离返回各个原子的配位数
+			当返回值不使用时，需要手动释放
+* @param：COODDIS *dis --- 距离
+* @return：int* --- 配位数序列
+****************************************/
+int* coordinationNumberR( COODDIS *dis );
+
+/***************************************
+* @Name:pairCorrelation
 * @Purpose：径向分布函数
 * @param：char *input --- 输入文件名称 
             int N --- 总原子数
             char *Output --- 文件存储路径
 * @return：void --- 
 ****************************************/
-void pairCorrelation3(char *input,int N,char *Output);
+void pairCorrelation(char *input,int N,char *Output);
 
 /***************************************
-* @Name:ShellCount3
+* @Name:ShellCount
 * @Purpose：各层原子统计
 * @param：char *input --- 输入文件名称
             int N --- 总原子数
             char *Output --- 输出文件名称
 * @return：void --- 
 ****************************************/
-void ShellCount3(char *input,int N,char *Output);
+void ShellCount( char *input, int N, char *output );
 
 //计算JA,JB,输入是二合金,结果打印出来.
 void JAJB(char *input,int N);
@@ -109,17 +157,6 @@ void JAJB(char *input,int N);
 void saveMatrix(double *x, int N, char* output);
 
 /***************************************
-* @Name:getLatticeParameter3
-* @Purpose：计算三合金的晶格
-			如果计算二合金，只要是atom2 = atom3 即可
-* @param：ATOM atom1 --- 原子类型1
-            ATOM atom2 --- 原子类型2
-            ATOM atom3 --- 原子类型3
-* @return：double --- 晶格常数
-****************************************/
-double getLatticeParameter3(ATOM atom1,ATOM atom2,ATOM atom3);
-
-/***************************************
 * @Name:getLatticeParameter
 * @Purpose：计算原子类型大于三的合金晶格
 * @param：ATOM* atoms --- 原子类型
@@ -133,6 +170,7 @@ void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N);
 void Alloy_Init(ALLOY *alloy,...);
 void Alloy_Copy(ALLOY *to, ALLOY *from);
 void Alloy_Free(ALLOY *alloy);
+
 void AtomNum_Init(ATOMNUM *atomNum,...);
 void AtomNum_Copy(ATOMNUM *to, ATOMNUM *from);
 void AtomNum_Free(ATOMNUM *atomNum);

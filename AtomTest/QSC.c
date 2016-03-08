@@ -1,6 +1,7 @@
 #include "QSC.h"
 
 #define NN 100000
+
 static double NUM1[NN],MUM1[NN];
 static double NUM2[NN],MUM2[NN];
 static double NUM3[NN],MUM3[NN];
@@ -11,6 +12,21 @@ static double NUMP1[NN],MUMP1[NN];
 static double NUMP2[NN],MUMP2[NN];
 static double NUMP3[NN],MUMP3[NN];
 
+typedef struct
+{
+	double NUM;
+	double MUM;
+} QSCCell;
+
+static QSCCell (*cells)[7];
+
+
+
+
+void QSC_Free()
+{ 
+	free( cells );
+}
 
 void SetEnergyPow(ATOM atom1,ATOM atom2,ATOM atom3)
 {
@@ -280,7 +296,36 @@ double QSCCutEnergy3(int *note,double *R,ATOM atom1, ATOM atom2,ATOM atom3,int N
 	return EP;
 }
 
-//三合金能量
+void QSC_Init( ALLOY *alloy )
+{
+	int i;
+	double r[7] = {0.707107,1.00,1.224745,1.414214,1.581139,1.732051,1.870829};
+	QSCATOM atom;
+	QSCATOM *QSCAtoms;
+
+	cells = calloc( alloy->atomTypeCount * alloy->atomTypeCount, sizeof(*cells) );
+
+	for( i = 0; i < atomTypeCount; i++ )
+	{
+		for( j = 0; j < atomTypeCount; j++ )
+		{
+			if( i == j)
+				QSCAtoms[i*atomTypeCount + j] = GetQSCAtom( alloy->atoms[i] );
+			else
+				QSCAtoms[i*atomTypeCount + j] = GetQSCTwoAtom( alloy->atoms[i], alloy->atoms[j] );
+		}
+	}
+	// 将指数计算做成数组 
+	for(i=0;i<NN;i++)
+	{
+		XI = (double)i/20000;
+		NUM1[i] = pow(XI,n1); NUM2[i] = pow(XI,n2); NUM3[i] = pow(XI,n3);
+		NUM12[i] = pow(XI,n12); NUM13[i] = pow(XI,n13); NUM23[i] = pow(XI,n23);
+		MUM1[i] = pow(XI,m1); MUM2[i] = pow(XI,m2); MUM3[i] = pow(XI,m3);
+		MUM12[i] = pow(XI,m12); MUM13[i] = pow(XI,m13); MUM23[i] = pow(XI,m23);
+	}
+}
+
 double QSCEnergy(int *note, double *R, ATOM *atoms, int atomTypeCount, int N)
 {
 	int not,not1;
@@ -291,7 +336,13 @@ double QSCEnergy(int *note, double *R, ATOM *atoms, int atomTypeCount, int N)
 	double EP=0;
     double *PEN,*VEN;
 	QSCATOM *QSCAtoms;
+	double a0; 
+	ALLOY alloy;
 
+	alloy.atoms = atoms;
+	alloy.atomTypeCount = atomTypeCount;
+	a0 = getLatticeParameter( &alloy );
+	
 	QSCAtoms = calloc(atomTypeCount * atomTypeCount, sizeof(QSCATOM));
 	PEN = calloc(N,sizeof(double));
 	VEN = calloc(N,sizeof(double));
@@ -312,6 +363,10 @@ double QSCEnergy(int *note, double *R, ATOM *atoms, int atomTypeCount, int N)
 		for(j=i+1;j<N;j++)
 		{   
 			R1 = *(R+i*N+j);
+			
+			if( R1 <= 2*a0 )
+				printf( "%f\n", R1/a0 );
+
             not1 = *(note+j);
 
 			RR = QSCAtoms[not * atomTypeCount + not1].a/R1;

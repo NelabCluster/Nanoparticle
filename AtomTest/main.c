@@ -23,10 +23,14 @@
 
 main()
 { 	
-//	MCPARA para;
-//	MCPara_Init(&para);
+//	CoordinateNumber( "result.txt", 1289, "CoordinateNumber.xls" );
+//	pairCorrelation( "result.txt", 1289, "PairCorrelation.xls" );
+//	ShellCount( "result.txt", 1289, "ShellCount.xls" );
+	MCPARA para;
+	MCPara_Init(&para);
 	//	MC2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"MC2");
 	//	MC3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"MC3");
+	MC2_InitWithMixing("THH210",443,200,Pt,Pd,QSC,&para,"MC2");
 
 	//	GAPARA para;
 	//	GAPara_Init(&para);
@@ -38,6 +42,12 @@ main()
 	//	PSOPara_Init( &para );
 //	PSO2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"PSO2");
 	//	PSO3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
+
+	//	FISHPARA para;
+	//	FISHPara_Init( &para );
+	//	FISH2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"FISH2");
+//	FISH3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
+
 
 	//算法：蒙特卡洛算法；
 	//初始结构：随机

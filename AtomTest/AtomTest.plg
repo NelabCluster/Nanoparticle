@@ -6,13 +6,13 @@
 --------------------Configuration: AtomTest - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP1930.tmp" with contents
+Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP812F.tmp" with contents
 [
 /nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR"Debug/" /Fp"Debug/AtomTest.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
-"E:\学校\程序\GitHub\Nanoparticle\AtomTest\FISH.c"
+"E:\学校\程序\GitHub\Nanoparticle\AtomTest\QSC.c"
 ]
-Creating command line "cl.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP1930.tmp" 
-Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP1931.tmp" with contents
+Creating command line "cl.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP812F.tmp" 
+Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP8140.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/AtomTest.pdb" /debug /machine:I386 /out:"Debug/AtomTest.exe" /pdbtype:sept 
 ".\Debug\main.obj"
@@ -27,14 +27,15 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 ".\Debug\QSCNewModel.obj"
 ".\Debug\TBM.obj"
 ]
-Creating command line "link.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP1931.tmp"
+Creating command line "link.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP8140.tmp"
 <h3>Output Window</h3>
 Compiling...
-FISH.c
-E:\学校\程序\GitHub\Nanoparticle\AtomTest\FISH.c(84) : warning C4101: 'E0' : unreferenced local variable
-E:\学校\程序\GitHub\Nanoparticle\AtomTest\FISH.c(84) : warning C4101: 'E1' : unreferenced local variable
-Linking...
-Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP1AC8.tmp" with contents
+QSC.c
+E:\学校\程序\GitHub\Nanoparticle\AtomTest\QSC.c(31) : error C2065: 'atom1' : undeclared identifier
+E:\学校\程序\GitHub\Nanoparticle\AtomTest\QSC.c(31) : error C2065: 'atom2' : undeclared identifier
+E:\学校\程序\GitHub\Nanoparticle\AtomTest\QSC.c(31) : error C2065: 'atom3' : undeclared identifier
+执行 cl.exe 时出错.
+Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP8269.tmp" with contents
 [
 /nologo /o"Debug/AtomTest.bsc" 
 ".\Debug\main.sbr"
@@ -48,14 +49,14 @@ Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSP1AC8.tmp" with co
 ".\Debug\QSC.sbr"
 ".\Debug\QSCNewModel.sbr"
 ".\Debug\TBM.sbr"]
-Creating command line "bscmake.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP1AC8.tmp"
+Creating command line "bscmake.exe @C:\Users\Lenovo\AppData\Local\Temp\RSP8269.tmp"
 Creating browse info file...
 <h3>Output Window</h3>
 
 
 
 <h3>Results</h3>
-AtomTest.exe - 0 error(s), 0 warning(s)
+AtomTest.exe - 1 error(s), 0 warning(s)
 </pre>
 </body>
 </html>

@@ -2,7 +2,7 @@
 #include "Base.h"
 #include "Energy.h"
 #include "Tool.h"
-
+//http://wenku.baidu.com/view/fe7d4b1414791711cc791777.html
 /***************************************
 * @Name: 鱼群算法参数
 ****************************************/
@@ -138,9 +138,9 @@ void FISH_Start( FISHInstance *instance, char *output);
 
 char FISH_Follow( FISHInstance *instance, int index );
 
-void FISH_Prey( FISHInstance *instance, int index );
+char FISH_Prey( FISHInstance *instance, int index );
 
-void FISH_Swarm( FISHInstance *instance, int index );
+char FISH_Swarm( FISHInstance *instance, int index );
 
 void FISH_SelAdaption( FISHInstance *instance );
 

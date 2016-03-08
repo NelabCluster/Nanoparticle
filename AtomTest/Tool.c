@@ -137,26 +137,17 @@ void ReadFile(char *Input,int *note,double *x,double *y,double *z,int N){
 	fclose(fp);	
 }
 
-//随机排列 三合金
-void MixNoteInt3(int *note,int N,int A,int B){
+void ReadFile1( char *input, int *note, COOD *cood, int N )
+{
 	int i;
-	int point;
-	int temp;
+	FILE *fp;
 
-	for(i=0;i<N;i++)
-		note[i] = i;
+	fp = fopen( input, "r" );
+	fscanf( fp, "%d", &N );
 	for(i=0;i<N;i++){
-		point = rand()%(N-i);
-		temp = note[i];
-		note[i] = note[point+i];
-		note[point+i] = temp;
-		if(note[i]<A)
-			note[i] = 0;
-		else if(note[i]<A+B)
-			note[i] = 1;
-		else
-			note[i] = 2;
+		fscanf( fp,"%d %lf %lf %lf", &note[i], &cood->x[i], &cood->y[i], &cood->z[i]);
 	}
+	fclose(fp);	
 }
 
 void MixNoteInt(int *note,int N,ATOMNUM* atomNum){
@@ -511,25 +502,6 @@ char* StoragePath(char *shape,int N,ALLOY *alloy,ATOMNUM *atomNum,char *Output)
 	return Line_End;
 }
 
-
-//打印Diaond文件格式，文件名为“Diamond.txt”(三合金)
-void printDiamond3(int *note,double *x,double *y,double *z,ATOM atomA,ATOM atomB,ATOM atomC,int N,char *path){
-	FILE *fp;
-	int i;
-	fp = fopen(path,"w");
-	fprintf(fp,"%d\n",N);
-	fprintf(fp,"%s%s%s,NCS\n",GetAtomPara(atomA).name,GetAtomPara(atomB).name,GetAtomPara(atomC).name);
-	for(i=0;i<N;i++){
-		if(note[i]==0)
-			fprintf(fp,"%s\t%lf\t%lf\t%lf\n",GetAtomPara(atomA).name,x[i],y[i],z[i]);
-		else if(note[i]==1)
-			fprintf(fp,"%s\t%lf\t%lf\t%lf\n",GetAtomPara(atomB).name,x[i],y[i],z[i]);
-		else
-			fprintf(fp,"%s\t%lf\t%lf\t%lf\n",GetAtomPara(atomC).name,x[i],y[i],z[i]);
-	}
-	fclose(fp);
-}
-
 void printDiamond(int *note,int N,COOD *cood,ALLOY *alloy,char *path)
 {
 	FILE *fp;
@@ -542,19 +514,6 @@ void printDiamond(int *note,int N,COOD *cood,ALLOY *alloy,char *path)
 	fprintf(fp,",NCS\n");
 	for(i=0;i<N;i++){
 		fprintf(fp,"%s\t%lf\t%lf\t%lf\n",GetAtomPara(alloy->atoms[note[i]]).name,cood->x[i],cood->y[i],cood->z[i]);
-	}
-	fclose(fp);
-}
-
-
-//打印result文件格式，文件名为“result.txt”(三合金)
-void printResult3(int *note,double *x,double *y,double *z,int N,double bili,char *path){
-	FILE *fp;
-	int i;
-	fp = fopen(path,"w");
-	fprintf(fp,"%d\t%lf\n",N,bili);
-	for(i=0;i<N;i++){
-		fprintf(fp,"%d\t%lf\t%lf\t%lf\n",note[i],x[i],y[i],z[i]);
 	}
 	fclose(fp);
 }
@@ -574,7 +533,7 @@ void printResult(int *note,int N,COOD *cood,char *path)
 
 
 
-int*  orderCoodFromCore(double *x,double *y,double *z,int N)
+int* orderCoodFromCore(double *x,double *y,double *z,int N)
 {
 	int i,j;
 	double tempR;
@@ -682,18 +641,21 @@ int*  OrderCoodAlongX(double *x,double *y,double *z,int N)
 }
 
 //根据R返回各个原子的配位数
-int *coordinationNumberR(double *R,int N,double mina0){
-	int i,j;
+int *coordinationNumberR( COODDIS *dis )
+{
+	int i,j,N;
 	int *neighbour;
+	double *R;
+	double mina0;
 
-	neighbour = calloc(N,sizeof(int));
+	N = dis->N;
+	R = dis->R;
+	mina0 = dis->Rmin + 0.2;
+	neighbour = calloc( N, sizeof(int) );
 
-	for(i=0;i<N;i++){
-		neighbour[i]=0;
-	}
-	for(i=0;i<N-1;i++){	
-		for(j=i+1;j<N;j++){	
-			if(*(R+i*N+j)< mina0){
+	for( i = 0; i < N-1; i++ ){	
+		for( j = i+1; j < N; j++ ){	
+			if( *(R+i*N+j) < mina0 ){
 				neighbour[i]++;
 				neighbour[j]++;
 			}
@@ -703,222 +665,307 @@ int *coordinationNumberR(double *R,int N,double mina0){
 	return neighbour;
 }
 
-//在不同配位数下的原子个数（三合金）
-void CoodNum3(char *input,int N,char *Output){
-	double *x,*y,*z;
-	double *R;
-	int *neighbour;
-	int *note;
-	int surface;
-	int i;
-	int num[12] = {0,};
-	int sum = 0;
-	int A[12]={0,},B[12]={0,},C[12]={0,};
-	FILE *fp;
-	surface = 0;
-	note = calloc(N,sizeof(int));
-	x = calloc(N,sizeof(double));
-	y = calloc(N,sizeof(double));
-	z = calloc(N,sizeof(double));
-	R = calloc(N*N,sizeof(double));
-	ReadFile(input,note,x,y,z,N);
-	Distance(x,y,z,R,N);
-	neighbour = coordinationNumberR(R,N,Rmin+0.2);
-	for(i=0;i<N;i++){
-		num[neighbour[i]-1] ++;
-		if(note[i]==0)
-			A[neighbour[i]-1] ++;
-		else if(note[i]==1)
-			B[neighbour[i]-1] ++;
-		else
-			C[neighbour[i]-1] ++;
-	}
-	for(i=0;i<12;i++){
-		printf("%d\t%d\t%d\t%d\t%d\n",i+1,num[i],A[i],B[i],C[i]);
-		sum = sum + num[i];
-	}
-	printf("all\t%d\n",sum);
-	fp = fopen(Output,"w");
-	fprintf(fp,"配位数\t\tatom0\tatom1\tatom2\n");
-	for(i=0;i<12;i++)
-		fprintf(fp,"%d\t%d\t%d\t%d\t%d\n",i+1,num[i],A[i],B[i],C[i]);
-	fclose(fp);
 
+void CoordinateNumber( char *input, int N, char *output )
+{
+	COOD cood;
+	COODDIS dis;
+	int *note, *neighbour;
+	int i,j,sum,typeNumber;
+	int num[12] = {0,};
+	int (*coord)[12];
+	FILE *fp;
+	
+	Cood_Init( &cood, N );
+	note = calloc(N,sizeof(int));
+	dis.R = calloc(N*N,sizeof(double));
+	
+	ReadFile1( input, note, &cood, N );
+	
+	typeNumber = 0;
+	for( i = 0; i < N; i++ )
+	{
+		if( note[i] > typeNumber )
+			typeNumber = note[i];
+	}
+	typeNumber ++;
+	coord = calloc( typeNumber, sizeof(*coord) );
+	memset( coord, 0, sizeof(*coord)*typeNumber );
+
+	Distance1( &cood, &dis );
+	neighbour = coordinationNumberR( &dis );
+	for( i = 0; i < N; i++){
+		num[neighbour[i]-1] ++;
+		coord[note[i]][neighbour[i]-1] ++;
+	}
+	
+	sum = 0;
+	for( i = 0; i < 12; i++ )
+		sum = sum + num[i];
+
+	printf( "配位数分析：\n");
+	printf( "配位数\tall" );
+	for( i = 0; i < typeNumber; i++ )
+		printf( "\tatom%d", i );
+	printf( "\n" );
+	for( i = 0; i < 12; i++ )
+	{
+		printf( "%d\t%d",i+1,num[i]);
+		for( j = 0; j < typeNumber; j++ )
+			printf( "\t%d", coord[j][i] );
+		printf( "\n" );
+	}
+	printf("all\t%d\n",sum );
+
+	fp = fopen( output, "w" );
+	fprintf( fp, "配位数\tall");
+	for( i = 0; i < typeNumber; i++ )
+		fprintf( fp, "\tatom%d", i );
+	fprintf( fp, "\n");
+	for( i = 0; i < 12; i++ )
+	{
+		fprintf(fp,"%d\t%d", i+1, num[i] );
+		for( j = 0; j < typeNumber; j++ )
+			fprintf( fp, "\t%d", coord[j][i] );
+		fprintf( fp, "\n" );
+	}
+	fprintf( fp, "all\t%d\n", sum );
+	fclose(fp);
+	
+	free( coord );
+	free( neighbour );
 	free(note);
-	free(x);
-	free(y);
-	free(z);
-	free(R);
+	free(dis.R);
+	Cood_Free( &cood );
 }
 
-
-//径向分布
-void pairCorrelation3(char *input,int N,char *Output)
+void pairCorrelation(char *input,int N,char *Output)
 {
 	int *note;
-	double *x,*y,*z,*R;
+	COOD cood;
+	double *R;
 	double maxX,minX,maxY,minY,maxZ,minZ;
 	double middleX,middleY,middleZ;
-	int i;
-	int midAtom;
+	int i,midAtom,typeNumber;
 	double r,dr;
-	int atom[3] = {0,0,0};
-
+	int *atom;
 	FILE *fp;
+
 	note = calloc(N,sizeof(int));
-	x = calloc(N,sizeof(double));
-	y = calloc(N,sizeof(double));
-	z = calloc(N,sizeof(double));
+	Cood_Init( &cood, N );
 	R = calloc(N,sizeof(double));
-	ReadFile(input,note,x,y,z,N);
 	
-	maxX = x[0];maxY = y[0];maxZ = z[0];
+	ReadFile1( input, note, &cood, N );
+	
+	typeNumber = 0;
+	for( i = 0; i < N; i++ )
+	{
+		if( note[i] > typeNumber )
+			typeNumber = note[i];
+	}
+	typeNumber ++;
+	atom = calloc( typeNumber, sizeof(int) );
+	memset( atom, 0, sizeof(int)*typeNumber );
+
+	maxX = cood.x[0];maxY = cood.y[0];maxZ = cood.z[0];
 	minX = maxX;minY = maxY;minZ = maxZ;
 	for(i=0;i<N;i++)
 	{
-		maxX = (x[i]>maxX)?x[i]:maxX;
-		maxY = (y[i]>maxY)?y[i]:maxY;
-		maxZ = (z[i]>maxZ)?z[i]:maxZ;
-		minX = (x[i]<minX)?x[i]:minX;
-		minY = (y[i]<minY)?y[i]:minY;
-		minZ = (z[i]<minZ)?z[i]:minZ;
+		maxX = ( cood.x[i] > maxX )? cood.x[i]:maxX;
+		maxY = ( cood.y[i] > maxY )? cood.y[i]:maxY;
+		maxZ = ( cood.z[i] > maxZ )? cood.z[i]:maxZ;
+		minX = ( cood.x[i] < minX )? cood.x[i]:minX;
+		minY = ( cood.y[i] < minY )? cood.y[i]:minY;
+		minZ = ( cood.z[i] < minZ )? cood.z[i]:minZ;
 	}
 
 	middleX = (maxX+minX)/2;
 	middleY = (maxY+minY)/2;
 	middleZ = (maxZ+minZ)/2;
-
-	for(i=0;i<N;i++)
+	
+	midAtom = -1;
+	for( i = 0; i < N; i++ )
 	{
-		if(fabs(x[i]-middleX)<0.001&&fabs(y[i]-middleY)<0.001&&fabs(z[i]-middleZ)<0.001)
+		if( fabs(cood.x[i]-middleX)<0.001 && fabs(cood.y[i]-middleY)<0.001 && fabs(cood.z[i]-middleZ)<0.001)
 		{
 			midAtom = i;
 			break;
 		}
 	}
 	for(i=0;i<N;i++)
-		R[i] = sqrt((x[i]-x[midAtom])*(x[i]-x[midAtom])+(y[i]-y[midAtom])*(y[i]-y[midAtom])+(z[i]-z[midAtom])*(z[i]-z[midAtom]));
+	{
+		if( midAtom == -1 )
+			R[i] = sqrt((cood.x[i]-middleX)*(cood.x[i]-middleX)+(cood.y[i]-middleY)*(cood.y[i]-middleY)+(cood.z[i]-middleZ)*(cood.z[i]-middleZ));
+		else
+			R[i] = sqrt((cood.x[i]-cood.x[midAtom])*(cood.x[i]-cood.x[midAtom])+(cood.y[i]-cood.y[midAtom])*(cood.y[i]-cood.y[midAtom])+(cood.z[i]-cood.z[midAtom])*(cood.z[i]-cood.z[midAtom]));
+	}
 	
+	printf("径向分布函数：\n");
 	r = 0;
 	dr = 0.8;
-	
-	fp = fopen(Output,"w");
-	fprintf(fp,"R\tatom0\tatom1\tatom2\n");
+	fp = fopen( Output, "w" );
+	printf( "R" );
+	fprintf( fp, "R");
+	for( i = 0; i < typeNumber; i++ )
+	{
+		fprintf( fp, "\tatom%d", i );
+		printf( "\tatom%d", i );
+	}
+	printf( "\n" );
+	fprintf( fp, "\n");
 
 	for(r = 0;r < 50;r = r + dr)
 	{	
-		atom[0] = 0;
-		atom[1] = 0;
-		atom[2] = 0;
-		for(i = 0;i < N;i++)
+		memset( atom, 0, sizeof(int)*typeNumber );
+
+		for( i = 0;i < N; i++ )
 		{
 			if(R[i] >= r && R[i] < r + dr)
-			{
 				atom[note[i]]++;
-			}
-			
 		}
-		printf("%f\t%d\t%d\t%d\n",r,atom[0],atom[1],atom[2]);
-		fprintf(fp,"%f\t%d\t%d\t%d\n",r,atom[0],atom[1],atom[2]);
+		printf( "%f", r );
+		fprintf( fp, "%f", r );
+		for( i = 0; i < typeNumber; i++ )
+		{
+			printf( "\t%d", atom[i] );
+			fprintf( fp, "\t%d", atom[i] );
+		}
+		printf( "\n" );
+		fprintf( fp, "\n" );
 	}
 
-	fclose(fp);
+	fclose( fp );
+	free( atom );
+	free( R );
+	Cood_Free( &cood );
 }
 
 
 //分层统计
-void ShellCount3(char *input,int N,char *Output)
+void ShellCount(char *input,int N,char *output)
 {
-	int i,j;
-	int sh=0;
-	int atom = 0;
-	int *neighbour,*flag,*shell;
-	int r0,r1,r2,rrr;
-	int An,Bn,Cn;
+	int i,j,sh,atom,typeNumber,rrr;
+	int *neighbour,*flag,*shell,*note;
+	int *nums,*r;
 	FILE *fp;
 	double a0;
-	double *R;
-	int *note;
-	double *x,*y,*z;
+	COOD cood;
+	COODDIS dis;
 
 	note = calloc(N,sizeof(int));
-	x = calloc(N,sizeof(double));
-	y = calloc(N,sizeof(double));
-	z = calloc(N,sizeof(double));
-	R = calloc(N*N,sizeof(double));
-	ReadFile(input,note,x,y,z,N);
-	Distance(x,y,z,R,N);
-
-	a0 = Rmin * sqrt(2);
+	Cood_Init( &cood, N );
+	dis.R = calloc(N*N,sizeof(double));
 	neighbour = calloc(N,sizeof(int));
 	flag = calloc(N,sizeof(int));
 	shell = calloc(N,sizeof(int));
-	for(i=0;i<N;i++){
+
+	ReadFile1( input, note, &cood, N );
+	Distance1( &cood, &dis );
+	
+	typeNumber = 0;
+	for( i = 0; i < N; i++ )
+	{
+		if( note[i] > typeNumber )
+			typeNumber = note[i];
+	}
+	typeNumber ++;
+	nums = calloc( typeNumber, sizeof(int) );
+	memset( nums, 0, sizeof(int)*typeNumber );
+	r = calloc( typeNumber, sizeof(int) );
+	memset( r, 0, sizeof(int)*typeNumber );
+
+	a0 = dis.Rmin * sqrt(2);
+	for( i = 0; i < N; i++ ){
 		neighbour[i] = 0;
 		flag[i] = 0;
 		shell[i] = 0;
 	}
-	fp = fopen(Output,"w");
-	printf("shell\tAtom\tatom0\tatom1\tatom2\n");
-	fprintf(fp,"shell\tNumber_of_Atom\tatom0\tatom1\tatom2\n");
-	An = 0;
-	Bn = 0;
-	Cn = 0;
+	
+	printf( "核壳分布：\n" );
+	fp = fopen( output, "w" );
+	printf( "shell\tall" );
+	fprintf( fp, "shell\tall" );
+	for( i = 0; i < typeNumber; i++ )
+	{
+		printf( "\tatom0%d", i );
+		fprintf( fp, "\tatom%d" ,i );		
+	}
+	printf( "\n" );
+	fprintf( fp, "\n" );
+	
+	atom = 0; 
+	sh = 0;
 	while(1)
 	{	
-		if(atom==N)
-			break;
-		for(i=0;i<N;i++)
-			neighbour[i]=0;
-		for(i=0;i<N-1;i++)
+		if( atom == N ) break;
+		
+		for( i = 0; i < N; i++ )
+			neighbour[i] = 0;
+		for( i = 0; i < N-1; i++ )
 		{	
-			for(j=i+1;j<N;j++)
+			for( j = i+1; j < N; j++ )
 			{	
-				if(flag[i]==1||flag[j]==1)
+				if( flag[i]==1 || flag[j]==1 )
 					continue;
-				if(*(R+i*N+j)<0.8*a0)
+				if( *(dis.R+i*N+j)<0.8*a0 )
 				{
 					neighbour[i]++;
 					neighbour[j]++;
 				}
 			}
 		}
-		r0 = 0;
-		r1 = 0;
-		r2 = 0;
+
+		memset( r, 0, sizeof(int)*typeNumber );
 		rrr = 0;
-		for(i=0;i<N;i++)
+		for( i = 0; i < N; i++ )
 		{	
-			if(flag[i]==1)
+			if( flag[i] == 1 )
 				continue;
-			if(neighbour[i]<12)
+			if( neighbour[i] < 12 )
 			{
 				shell[i] = sh;
 				flag[i] = 1;
 				atom++;	
-				if(note[i]==0)
-					r0++;
-				if(note[i]==1)
-					r1++;
-				if(note[i]==2)
-					r2++;
+				r[note[i]] ++;
 				rrr ++;
 			}
 		}
-		An = An + r0;
-		Bn = Bn + r1;
-		Cn = Cn + r2;
-		printf("%d\t%d\t%d\t%d\t%d\n",sh,rrr,r0,r1,r2);
-		fprintf(fp,"%d\t%d\t%d\t%d\t%d\n",sh,rrr,r0,r1,r2);
+
+		for( i = 0; i < typeNumber; i++ )
+			nums[i] = nums[i] + r[i];
+		
+		printf( "%d\t%d", sh, rrr );
+		fprintf( fp,"%d\t%d", sh, rrr );
+		for( i = 0; i < typeNumber; i++ )
+		{
+			printf( "\t%d", r[i] );
+			fprintf( fp,"\t%d", r[i] );		
+		}
+		printf( "\n" );
+		fprintf( fp, "\n" );
+
 		sh++;
 	}
 
-	printf("ALL\t%d\t%d\t%d\t%d\n",atom,An,Bn,Cn);
-	fprintf(fp,"ALL\t%d\t%d\t%d\t%d\n",atom,An,Bn,Cn);
+	printf( "ALL\t%d", atom );
+	fprintf( fp, "ALL\t%d", atom );
+	for( i = 0; i < typeNumber; i++ )
+	{
+		printf( "\t%d", nums[i] );
+		fprintf( fp, "\t%d", nums[i] );	
+	}
+	printf( "\n" );
+	fprintf( fp, "\n" );
 	fclose(fp);
-	free(neighbour);
-	free(flag);
-	free(shell);	
+	
+	free( nums );
+	free( r );
+	free( neighbour );
+	free( flag );
+	free( shell );
+	free( dis.R );
+	Cood_Free( &cood );
+	free( note );
 }
 
 void JAJB(char *input,int N)
@@ -1000,16 +1047,16 @@ void printData(char *Line_Date,char *Line_End,int N)
 	strcat(Line_Date,"\\result.txt");
 
 	strcpy(Line_Output,Line_End);
-	strcat(Line_Output,"\\coodNum.xls");
-	CoodNum3(Line_Date,N,Line_Output);
+	strcat(Line_Output,"\\CoordinateNumber.xls");
+	CoordinateNumber(Line_Date,N,Line_Output);
 
 	strcpy(Line_Output,Line_End);
 	strcat(Line_Output,"\\pairCorrelation.xls");
-	pairCorrelation3(Line_Date,N,Line_Output);
+	pairCorrelation(Line_Date,N,Line_Output);
 
 	strcpy(Line_Output,Line_End);
 	strcat(Line_Output,"\\shellCount.xls");
-	ShellCount3(Line_Date,N,Line_Output);
+	ShellCount(Line_Date,N,Line_Output);
 
 }
 
@@ -1073,15 +1120,6 @@ void saveMatrix(double *x, int N, char* output)
 	}
 
 	fclose(f);
-}
-
-
-double getLatticeParameter3(ATOM atom1,ATOM atom2,ATOM atom3)
-{
-	if(atom2 == atom3)
-		return (GetAtomPara(atom1).a + GetAtomPara(atom2).a) / 2;
-	
-	return (GetAtomPara(atom1).a + GetAtomPara(atom2).a + GetAtomPara(atom3).a) / 3;
 }
 
 double getLatticeParameter(ALLOY *alloy)
