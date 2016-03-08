@@ -1,14 +1,18 @@
 #pragma once
 #include "Base.h"
-      
+#include "Energy.h"
+
 double Rmax;
 double Rmin;
 
 ATOMPARA GetAtomPara(ATOM atom);
 
+void Energy_Init( PE type, ALLOY *alloy );
+void Energy_Free( PE type );
 PEnergy3 GetEnergyFunction(PE type);
 PCutEnergy3 GetCutEnergyFunction(PE type);
 PEnergy GetEnergyFunction1(PE type);
+PCutEnergy GetCutEnergyFunction1(PE type);
 
 /***************************************
 * @Name:ReadCood
@@ -97,7 +101,7 @@ void printResult( int *note, int N, COOD *cood, char *path );
 ****************************************/
 void printDiamond(int *note,int N,COOD *cood,ALLOY *alloy,char *path);
 
-void printData(char *Line_Date,char *Line_End,int N);
+void printData(char *Line_Date, int N);
 
 //根据原子里质心距离排序坐标
 int* orderCoodFromCore(double *x,double *y,double *z,int N);

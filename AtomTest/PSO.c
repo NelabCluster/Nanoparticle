@@ -94,6 +94,8 @@ void PSO_Start(PSOInstance *instance,char *output)
 	a0 = getLatticeParameter( &instance->alloy );
 
 	Line_End = StoragePath( instance->shape, instance->N, &instance->alloy, &instance->atomNum, output );
+	
+	Energy_Init( instance->energyType, &instance->alloy );
 
 	Distance1(&instance->cood,&instance->dis);
 	for(i=0;i<instance->N;i++){
@@ -105,14 +107,14 @@ void PSO_Start(PSOInstance *instance,char *output)
 
 	//初始化
 	for( i = 0; i < instance->para.popSize; i++)
-		instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+		instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 	updatePbest( instance );
 	updateGbest( instance );
 	
 	E0 = instance->gbest->energy;
 	
 	printf( "\nInit PSO...\n" );
-	PSO_PrintMsg( instance );
+	PSO_PrintMsg( instance, Line_End );
 
 	printf( "\nStart PSO...\n" );
 	PSO_EnergyFile( instance, &fp, Line_End );
@@ -128,7 +130,7 @@ void PSO_Start(PSOInstance *instance,char *output)
 		upDateChorm( instance );
 
 		for( i = 0; i < instance->para.popSize; i++)
-			instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+			instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 
 		//更新pbest
 		updatePbest( instance );
@@ -159,14 +161,19 @@ void PSO_Start(PSOInstance *instance,char *output)
 			PSO_ResultFile( instance, Line_End );
 		}
 
-		if( step > instance->para.convergenceGenerations )	break;
+		if( step > instance->para.convergenceGenerations || instance->clocks > instance->para.maxGenerations )	break;
 	}
 
 	fclose(fp);
 	free( instance->dis.R );
+	
+	Energy_Free( instance->energyType );
 
+	PSO_PrintMsg( instance, Line_End );
 	PSO_ResultFile( instance, Line_End );
 	
+	printData( Line_End, instance->N );
+
 	free(Line_End);
 }
 
@@ -256,7 +263,7 @@ void PSOMutation( PSOInstance *instance )
 			tempChrom = pbest->chrom[randN1];
 			pbest->chrom[randN1] = pbest->chrom[randN2];
 			pbest->chrom[randN2] = tempChrom;
-			tempE = GetEnergyFunction1(instance->energyType)(pbest->chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N); 
+			tempE = GetCutEnergyFunction1(instance->energyType)(pbest->chrom,instance->dis.R,&instance->alloy,instance->N); 
 			if(tempE <= pbest->energy)
 			{
 				pbest->energy = tempE;
@@ -269,28 +276,42 @@ void PSOMutation( PSOInstance *instance )
 	}
 }
 
-void PSO_PrintMsg(PSOInstance *instance)
+void PSO_PrintMsg(PSOInstance *instance, char *output)
 {
 	int i,tempNum;
 	ATOM tempATOM;
+	FILE *fp;
+	char Line_Date[200];
+	
+	strcpy( Line_Date, output );
+	strcat( Line_Date, "\\PSO.txt" );
 
+	fp = fopen( Line_Date, "w" );
 	printf( "shape=%s\tN=%d\n", instance->shape, instance->N );
 	printf( "POPSIZE=%d\tw=%lf\trate=%lf\n", instance->para.popSize, instance->para.w, instance->para.rate );
+	fprintf( fp, "shape=%s\tN=%d\n", instance->shape, instance->N );
+	fprintf( fp, "POPSIZE=%d\tw=%lf\trate=%lf\n", instance->para.popSize, instance->para.w, instance->para.rate );
+
 	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
 	{
 		tempATOM = instance->alloy.atoms[i];
 		tempNum = instance->atomNum.numberOfAtom[i];
 		printf("%s=%.3f\t",GetAtomPara(tempATOM).name,(double)tempNum / instance->N);
+		fprintf( fp, "%s=%.3f\t",GetAtomPara(tempATOM).name,(double)tempNum / instance->N);
 	}
 	printf("\n");
+	fprintf( fp, "\n");
 	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
 	{
 		tempATOM = instance->alloy.atoms[i];
 		tempNum = instance->atomNum.numberOfAtom[i];
 		printf("%s=%d\t",GetAtomPara(tempATOM).name,tempNum);
+		fprintf(fp,"%s=%d\t",GetAtomPara(tempATOM).name,tempNum);
 	}
 	printf("\n");
 	printf("best=%lf\n",instance->gbest->energy);
+	fprintf(fp,"\n");
+	fprintf(fp,"best=%lf\n",instance->gbest->energy);
 }
 
 void PSO_EnergyFile( PSOInstance *instance, FILE **fp, char *output )

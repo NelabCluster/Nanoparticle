@@ -76,6 +76,8 @@ void MC_Start( MCInstance *instance, char *output ){
 	int MJ,NJ;
 
 	srand((unsigned)time(NULL));			// 随机种子
+	
+	Energy_Init( instance->energyType, &instance->alloy );
 
 	a0 = getLatticeParameter(&instance->alloy);
 
@@ -90,10 +92,11 @@ void MC_Start( MCInstance *instance, char *output ){
 	}
 	Distance1(&instance->cood,&instance->dis);
 
-	instance->one.E = GetEnergyFunction1(instance->energyType)(instance->one.note,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+	instance->one.E = GetCutEnergyFunction1(instance->energyType)( instance->one.note, instance->dis.R, &instance->alloy, instance->N );
+	
 
 	printf("\nInit MC...\n");
-	MC_PrintMsg(instance);
+	MC_PrintMsg(instance,Line_End);
 
 	printf("\nStart MC...\n");
 	MC_EnergyFile(instance,&fp,Line_End);
@@ -119,7 +122,7 @@ void MC_Start( MCInstance *instance, char *output ){
 		instance->one.note[MMJ] = NJ;
 		instance->one.note[NNJ] = MJ;
 
-		E1 = GetEnergyFunction1(instance->energyType)(instance->one.note,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+		E1 = GetCutEnergyFunction1(instance->energyType)( instance->one.note, instance->dis.R, &instance->alloy, instance->N );
 
 		if(E1 <= instance->one.E)								 // 交换后能量更低则保留，更改则变回原值 
 		{
@@ -150,33 +153,52 @@ void MC_Start( MCInstance *instance, char *output ){
 	free(instance->dis.R);
 
 	MC_ResultFile( instance, Line_End );
+	MC_PrintMsg(instance,Line_End);
+	printData( Line_End, instance->N );
 
+	Energy_Free( instance->energyType );
 	free(Line_End);
 }
 
-void MC_PrintMsg(MCInstance *instance)
+void MC_PrintMsg( MCInstance *instance, char *output )
 {
 	int i,tempNum;
 	ATOM tempATOM;
+	FILE *fp;
+	char Line_Date[200];
 
+	strcpy( Line_Date, output );
+	strcat( Line_Date, "\\MC.txt" );
+
+	fp = fopen( Line_Date, "w" );
 	printf("Shape=%s\tN=%d\n",instance->shape,instance->N);
 	printf("RSTEP=%ld\tT=%d\n",instance->para.RSTEP,instance->para.temperature);
+	fprintf( fp, "Shape=%s\tN=%d\n",instance->shape,instance->N);
+	fprintf( fp, "RSTEP=%ld\tT=%d\n",instance->para.RSTEP,instance->para.temperature);	
 	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
 	{
 		tempATOM = instance->alloy.atoms[i];
 		tempNum = instance->atomNum.numberOfAtom[i];
 		printf("%s=%.3f\t",GetAtomPara(tempATOM).name,(double)tempNum / instance->N);
+		fprintf(fp,"%s=%.3f\t",GetAtomPara(tempATOM).name,(double)tempNum / instance->N);
 	}
 	printf("\n");
+	fprintf(fp,"\n");
 	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
 	{
 		tempATOM = instance->alloy.atoms[i];
 		tempNum = instance->atomNum.numberOfAtom[i];
 		printf("%s=%d\t",GetAtomPara(tempATOM).name,tempNum);
+		fprintf(fp,"%s=%d\t",GetAtomPara(tempATOM).name,tempNum);
 	}
 	printf("\n");
 	printf("E=%lf\n",instance->one.E);
 	printf("a0=%lf\n",instance->dis.Rmin*sqrt(2));
+	fprintf(fp,"\n");
+	fprintf(fp,"E=%lf\n",instance->one.E);
+	fprintf(fp,"a0=%lf\n",instance->dis.Rmin*sqrt(2));
+	
+	fclose( fp );
 }
 
 void MC_EnergyFile(MCInstance *instance, FILE **fp, char *output)

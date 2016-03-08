@@ -2,9 +2,9 @@
 /**************************势能原子***********************************/
 //	QSC: Ni Cu Rh Pd Ag Ir Pt Au  
 //	QSCNewModel: 占时不用
-//	AEAM:
-//	Johnson: Fe Pt Cu
-//	TBM(Gupta): Pt Pd1 Pd2 Pd3
+//	AEAM: 占时不用
+//	Johnson: Fe Pt Cu 占时不用
+//	TBM(Gupta): Pt Pd1 Pd2 Pd3 占时不用
 /**************************形状尺寸***********************************/
 //	SP:	19 141 459 1061 2171 3781 5895 8685 12479	
 //	CU: 63 365 1099 2457 4631 7813 12195
@@ -23,111 +23,75 @@
 
 main()
 { 	
-//	CoordinateNumber( "result.txt", 1289, "CoordinateNumber.xls" );
-//	pairCorrelation( "result.txt", 1289, "PairCorrelation.xls" );
-//	ShellCount( "result.txt", 1289, "ShellCount.xls" );
-	MCPARA para;
-	MCPara_Init(&para);
-	//	MC2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"MC2");
-	//	MC3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"MC3");
-	MC2_InitWithMixing("THH210",443,200,Pt,Pd,QSC,&para,"MC2");
 
-	//	GAPARA para;
-	//	GAPara_Init(&para);
-	//	para.convergenceGenerations = 100;
-//	GA2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"GA2_MIX");
-	//	GA3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"GA3");
+	/*
+		以遗传算法为例，说明如何使用：
+		GAPARA para：定义算法参数实例，该参数包含的内容可在GA.H中查看，下面一一列出，
+					 	int popSize：				//种群个数
+						double pc：					//交叉概率
+						double pm;					//变异概率
+						int maxGenerations;			//最大迭代次数 (当迭代次数达到最大迭代次数 
+						int convergenceGenerations;	//收敛代数		或者 不变的代数超过收敛代数时候， 算法终止)
+						char needOrderCood;			//是否需要排序；1：需要，0：不需要
+						char needAdjustment;		//是否需要调整算子；1：需要，0：不需要
+						double adjustmentRate;		//调整概率，当needAdjustment是1时有效
+		刚定义的参数实例未赋值，可以通过一下函数赋默认值：
+		GAPara_Init( &para ); 默认值在GA.H中可以查看，这里列出：
+								int popSize = 100：			
+								double pc = 0.8：				
+								double pm = 0.0015;				
+								int maxGenerations = 5000;			
+								int convergenceGenerations = 1000;	
+								char needOrderCood = 1;			
+								char needAdjustment = 1;		
+								double adjustmentRate = 1.0;
+		也可以手动修改，如设置最大迭代次数为3000代：
+		para.maxGeneration = 3000;
+		设置好参数后，就可以带入二合金或是三合金的函数中进行运算：
+		GA2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"GA2"); 
+		GA3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"GA3");
+		二合金每个参数的意义如下：	"CU":构型是立方体
+									63	:原子总数是63
+									30	:Pt的原子数是30
+									Pt,Pd:原子类型为Pt,Pd
+									QSC	:势能为QSC
+									&para:遗传算法参数
+									"GA2":结果存在的文件夹名称GA2
+		三合金每个参数的意义如下：	"CU":构型是立方体
+									63	:原子总数是63
+									10,20	:Pt的原子数是10,Pd原子个数是20
+									Pt,Pd,Au:原子类型为Pt,Pd,Au
+									QSC	:势能为QSC
+									&para:遗传算法参数
+									"GA3":结果存在的文件夹名称GA3
 
-	//	PSOPARA para;
-	//	PSOPara_Init( &para );
+		1、算法的优化是自动开启的，可以通过将参数中 needOrderCood 和 needAdjustment 设置为0 取消优化；
+		   当参数进行修改后，记得修改存储结果的文件夹名称，防止文件的覆盖。
+		2、当遇到算法长时间无法收敛的情况，可以通过将参数中的 maxGenerations 或是 convergenceGenerations 设置较小值，降低收敛条件。
+		   需要注意的是如果是不同算法对于同一个对象的对比，最好设置相同的收敛条件。
+	*/
+//	遗传算法
+//	GAPARA para;
+//	GAPara_Init(&para);
+//	GA2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"GA2");
+//	GA3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"GA3");
+
+//	蒙特卡罗法
+//	MCPARA para;
+//	MCPara_Init(&para);
+//	MC2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"MC2");
+//	MC3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"MC3");
+
+//	粒子群算法
+//	PSOPARA para;
+//	PSOPara_Init( &para );
 //	PSO2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"PSO2");
-	//	PSO3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
-
-	//	FISHPARA para;
-	//	FISHPara_Init( &para );
-	//	FISH2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"FISH2");
-//	FISH3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
-
-
-	//算法：蒙特卡洛算法；
-	//初始结构：随机
-	//形状：立法体
-	//总原子数: 365
-	//第一种原子的个数(这里就是Au):180
-	//合金类型: Au-Ag;
-	//势能：QSC
-	//代数：10000
-	//存储的文件夹名称：“MCS_MIX”，可以自己设定
-//	MCS2_InitWithMixing("CU",365,180,Au,Ag,QSC,100000,"MCS_MIX");
-
-	/****其他初始结构*****/
-	//初始结构：相位分离
-	//存储的文件夹名称：“MCS_PHASE”
-//	MCS2_InitWithPhase("CU",365,180,Au,Ag,QSC,10000,"MCS_PHASE");
-	//初始结构：核壳结构，第一种原子在内部
-	//存储的文件夹名称：“MCS_CORE”
-//	MCS2_InitWithFromCore("CU",365,180,Au,Ag,QSC,10000,"MCS_CORE");
-	//初始结构: 有序初始结构
-	//存储的文件夹名称：“MCS_L0”
-//	MCS2_InitWithL0("CU",365,180,Au,Ag,QSC,10000,"MCS_L0");
-
-
-	//算法：遗传算法；
-	//初始结构：随机
-	//形状：立法体 CU
-	//总原子数: 365
-	//第一种原子的个数(这里就是Au):180
-	//合金类型: Au-Ag
-	//势能：QSC
-	//种群大小：100
-	//交叉概率：0.8
-	//变异率：0.0015
-	//调整概率：1.0
-	//存储的文件夹名称：GA2_MIX
-//	GA2_InitWithMixing("CU",365,180,Au,Ag,QSC,100,0.8,0.0015,1.0,"GA2_MIX");
-
-	//算法：遗传算法；
-	//初始结构：随机
-	//形状：立法体 CU
-	//总原子数: 365
-	//第一种原子的个数(这里就是Pt):100
-	//第二种原子的个数(这里就是Pd):200
-	//合金类型: Pt-Pd-Au
-	//势能：QSC
-	//种群大小：100
-	//交叉概率：0.8
-	//变异率：0.0015
-	//调整概率：1.0
-	//存储的文件夹名称：GA3_MIX
-//	GA3_InitWithMixing("CU",365,100,200,Pt,Pd,Au,QSC,100,0.8,0.0015,1.0,"GA3_MIX");
-
-	//算法：粒子群算法；
-	//初始结构：随机
-	//形状：立法体
-	//总原子数: 365
-	//第一种原子的个数(这里就是Pt):180
-	//合金类型: Au-Ag
-	//势能：QSC
-	//种群大小：100
-	//惯性系数：0.25
-	//调整率：1.0
-//	PSO2_InitWithMixing("CU",365,180,Au,Ag,QSC,100,0.25,1.0,"PSO2_MIX_YES",PSOYesImprove);//改进的PSO 存储的文件夹名称：PSO_PARA1_YES
-//	PSO2_InitWithMixing("CU",365,180,Au,Ag,QSC,100,0.25,1.0,"PSO2_MIX_NO",PSONoImprove);//未改进PSO //存储的文件夹名称：PSO_PARA1_NO
+//	PSO3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
 	
-
-	//算法：粒子群算法；
-	//初始结构：随机
-	//形状：立法体 CU
-	//总原子数: 365
-	//第一种原子的个数(这里就是Pt):100
-	//第二种原子的个数(这里就是Pd):200
-	//合金类型: Pt-Pd-Au
-	//势能：QSC
-	//势能：QSC
-	//种群大小：100
-	//惯性系数：0.25
-	//调整率：1.0
-//	PSO3_InitWithMixing("CU",365,100,200,Pt,Pd,Au,QSC,100,0.25,1.0,"PSO3_MIX");//改进的PSO 存储的文件夹名称：PSO_PARA1_YES
-
+//	鱼群算法未完成，不可使用
+//	FISHPARA para;
+//	FISHPara_Init( &para );
+//	FISH2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"FISH2");
+//	FISH3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
 
 }

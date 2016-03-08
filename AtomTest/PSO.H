@@ -10,6 +10,7 @@ typedef struct
 {
 	int popSize;				//种群大小
 	double w;					//惯性系数
+	int maxGenerations;			//最大迭代次数
 	int convergenceGenerations;	//收敛代数
 	char needOrderCood;			//是否需要排序；1：需要，0：不需要
 	char needAdjustment;		//是否需要调整算子；1：需要，0：不需要
@@ -20,7 +21,7 @@ typedef struct
 * @Name: 粒子群算法默认参数值
 ****************************************/
 static const PSOPARA _defPSOPara = {
-	100,0.25,1000,1,1,1.0
+	100,0.25,5000,1000,1,1,1.0
 };
 
 /***************************************
@@ -182,7 +183,7 @@ void PSOMutation(PSOInstance *instance);
 * @param：PSOInstance *instance --- 粒子群算法实例
 * @return：void --- 
 ****************************************/
-void PSO_PrintMsg(PSOInstance *instance);
+void PSO_PrintMsg(PSOInstance *instance, char *output);
 
 /***************************************
 * @Name:PSO_EnergyFile

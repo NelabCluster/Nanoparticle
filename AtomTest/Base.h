@@ -121,5 +121,5 @@ typedef enum PotentialEnergy PE;
 
 typedef double (*PEnergy3) (int *note, double *R, ATOM atom1,ATOM atom2,ATOM atom3,int N);
 typedef double (*PCutEnergy3) (int *note, double *R, ATOM atom1,ATOM atom2,ATOM atom3,int N,double a0);
-typedef double (*PEnergy) (int *note, double *R, ATOM* atoms, int atomsN, int N);
-typedef double (*PCutEnergy) (int *note, double *R, ATOM* atoms, int atomsN, int N);
+typedef double (*PEnergy) (int *note, double *R, ALLOY *alloy, int N);
+typedef double (*PCutEnergy) (int *note, double *R, ALLOY *alloy, int N);

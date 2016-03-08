@@ -122,7 +122,7 @@ void MC_Start(MCInstance *instance, char *output);
 * @param£ºMCInstance *instance --- ÃÉÌØ¿¨ÂÞËã·¨ÊµÀý
 * @return£ºvoid --- 
 ****************************************/
-void MC_PrintMsg(MCInstance *instance);
+void MC_PrintMsg( MCInstance *instance, char *output );
 
 /***************************************
 * @Name:MC_EnergyFile

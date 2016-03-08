@@ -12,6 +12,7 @@ typedef struct
 	int popSize;				//种群个数
 	double pc;					//交叉概率
 	double pm;					//变异概率
+	int maxGenerations;			//最大迭代次数
 	int convergenceGenerations;	//收敛代数
 	char needOrderCood;			//是否需要排序；1：需要，0：不需要
 	char needAdjustment;		//是否需要调整算子；1：需要，0：不需要
@@ -22,7 +23,7 @@ typedef struct
 * @Name: 遗传算法默认参数值
 ****************************************/
 static const GAPARA _defGAPara = {
-	100,0.8,0.0015,1000,1,1,1.0
+	100,0.8,0.0015,5000,1000,1,1,1.0
 };
 
 /***************************************
@@ -177,7 +178,7 @@ void GA_FindBestAndWorst(GAInstance *instance);
 * @param：GAInstance *instance --- 遗传算法实例
 * @return：void --- 
 ****************************************/
-void GA_PrintMsg(GAInstance *instance);
+void GA_PrintMsg(GAInstance *instance, char *output );
 
 /***************************************
 * @Name:GA_EnergyFile

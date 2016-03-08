@@ -75,12 +75,46 @@ PCutEnergy3 GetCutEnergyFunction(PE type)
 	return NULL;
 }
 
+void Energy_Init( PE type, ALLOY *alloy )
+{
+	switch( type )
+	{
+	case QSC:
+		{
+			QSC_Init( alloy );
+			break;
+		}
+	}
+}
+void Energy_Free( PE type )
+{
+	switch( type )
+	{
+	case QSC:
+		{
+			QSC_Free();
+			break;
+		}
+	}
+}
+
 PEnergy GetEnergyFunction1(PE type)
 {
 	switch (type)
 	{
 	case QSC:
 		return QSCEnergy;
+		break;
+	}
+	return NULL;
+}
+
+PCutEnergy GetCutEnergyFunction1(PE type)
+{
+	switch (type)
+	{
+	case QSC:
+		return QSCCutEnergy;
 		break;
 	}
 	return NULL;
@@ -1040,23 +1074,24 @@ void JAJB(char *input,int N)
 }
 
 
-void printData(char *Line_Date,char *Line_End,int N)
+void printData(char *Line_Date,int N)
 {
+	char Line_Input[200];
 	char Line_Output[200];
-	strcpy(Line_Date,Line_End);
-	strcat(Line_Date,"\\result.txt");
+	strcpy(Line_Input,Line_Date);
+	strcat(Line_Input,"\\result.txt");
 
-	strcpy(Line_Output,Line_End);
+	strcpy(Line_Output,Line_Date);
 	strcat(Line_Output,"\\CoordinateNumber.xls");
-	CoordinateNumber(Line_Date,N,Line_Output);
+	CoordinateNumber(Line_Input,N,Line_Output);
 
-	strcpy(Line_Output,Line_End);
-	strcat(Line_Output,"\\pairCorrelation.xls");
-	pairCorrelation(Line_Date,N,Line_Output);
+	strcpy(Line_Output,Line_Date);
+	strcat(Line_Output,"\\PairCorrelation.xls");
+	pairCorrelation(Line_Input,N,Line_Output);
 
-	strcpy(Line_Output,Line_End);
-	strcat(Line_Output,"\\shellCount.xls");
-	ShellCount(Line_Date,N,Line_Output);
+	strcpy(Line_Output,Line_Date);
+	strcat(Line_Output,"\\ShellCount.xls");
+	ShellCount(Line_Input,N,Line_Output);
 
 }
 
@@ -1171,7 +1206,7 @@ void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N)
 
 	ReadFile(input,note,x,y,z,N);
 	Distance(x,y,z,R,N);
-	E0 = QSCEnergy(note,R,atoms,atomTypeCount,N);
+	E0 = QSCEnergy(note,R,&alloy,N);
 	F0 = QSCForce(note,R,x,y,z,FX,FY,FZ,atoms,atomTypeCount,N);
 	E1 = E0;
 	F1 = F0;
@@ -1198,7 +1233,7 @@ void SD_File(char *input, ATOM *atoms, int atomTypeCount, int N)
 		
 		Distance(xx,yy,zz,RR,N);
 		F1 = QSCForce(note,RR,xx,yy,zz,FX,FY,FZ,atoms,atomTypeCount,N);
-		E1 = QSCEnergy(note,RR,atoms,atomTypeCount,N);
+		E1 = QSCEnergy(note,RR,&alloy,N);
 		//如果能量减小接受增大步长，否则步长减小
 		if(E1<E0)
 		{

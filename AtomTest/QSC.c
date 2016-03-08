@@ -18,14 +18,15 @@ typedef struct
 	double MUM;
 } QSCCell;
 
-static QSCCell (*cells)[7];
+static QSCCell (*QSCcells)[7];
 
-
+static 	QSCATOM *QSCAtoms;
 
 
 void QSC_Free()
 { 
-	free( cells );
+	free( QSCcells );
+	free( QSCAtoms );
 }
 
 void SetEnergyPow(ATOM atom1,ATOM atom2,ATOM atom3)
@@ -296,14 +297,31 @@ double QSCCutEnergy3(int *note,double *R,ATOM atom1, ATOM atom2,ATOM atom3,int N
 	return EP;
 }
 
+int DistanceIndex(double r)
+{
+	double precision = 0.01;
+
+	if( fabs(r-0.707107) < precision ) return 0;
+	if( fabs(r-1.000000) < precision ) return 1;
+	if( fabs(r-1.224745) < precision ) return 2;
+	if( fabs(r-1.414214) < precision ) return 3;
+	if( fabs(r-1.581139) < precision ) return 4;
+	if( fabs(r-1.732051) < precision ) return 5;
+	if( fabs(r-1.870829) < precision ) return 6;
+
+	return -1;
+}
+
 void QSC_Init( ALLOY *alloy )
 {
-	int i;
+	int i,j,m,atomTypeCount;
+	double RR,a0;
 	double r[7] = {0.707107,1.00,1.224745,1.414214,1.581139,1.732051,1.870829};
 	QSCATOM atom;
-	QSCATOM *QSCAtoms;
 
-	cells = calloc( alloy->atomTypeCount * alloy->atomTypeCount, sizeof(*cells) );
+	atomTypeCount = alloy->atomTypeCount;
+	QSCcells = calloc( atomTypeCount * atomTypeCount, sizeof(*QSCcells) );
+	QSCAtoms = calloc( atomTypeCount * atomTypeCount, sizeof(QSCATOM) );
 
 	for( i = 0; i < atomTypeCount; i++ )
 	{
@@ -315,18 +333,85 @@ void QSC_Init( ALLOY *alloy )
 				QSCAtoms[i*atomTypeCount + j] = GetQSCTwoAtom( alloy->atoms[i], alloy->atoms[j] );
 		}
 	}
-	// 将指数计算做成数组 
-	for(i=0;i<NN;i++)
+	
+	a0 = getLatticeParameter( alloy );
+	for( i = 0; i < 7; i++ )
+		r[i] *= a0;
+
+	for( i = 0; i < atomTypeCount; i++ )
 	{
-		XI = (double)i/20000;
-		NUM1[i] = pow(XI,n1); NUM2[i] = pow(XI,n2); NUM3[i] = pow(XI,n3);
-		NUM12[i] = pow(XI,n12); NUM13[i] = pow(XI,n13); NUM23[i] = pow(XI,n23);
-		MUM1[i] = pow(XI,m1); MUM2[i] = pow(XI,m2); MUM3[i] = pow(XI,m3);
-		MUM12[i] = pow(XI,m12); MUM13[i] = pow(XI,m13); MUM23[i] = pow(XI,m23);
+		for( j = 0; j < atomTypeCount; j++ )
+		{
+			for( m = 0; m < 7; m++ )
+			{
+				atom = QSCAtoms[i * atomTypeCount + j];
+				RR = atom.a/r[m];
+				QSCcells[i*atomTypeCount+j][m].MUM = atom.e*pow(RR,atom.n);
+				QSCcells[i*atomTypeCount+j][m].NUM = pow(RR,atom.m);
+			}
+		}
 	}
+//	for(i=0;i<NN;i++)
+//	{
+//		XI = (double)i/20000;
+//		NUM1[i] = pow(XI,n1); NUM2[i] = pow(XI,n2); NUM3[i] = pow(XI,n3);
+//		NUM12[i] = pow(XI,n12); NUM13[i] = pow(XI,n13); NUM23[i] = pow(XI,n23);
+//		MUM1[i] = pow(XI,m1); MUM2[i] = pow(XI,m2); MUM3[i] = pow(XI,m3);
+//		MUM12[i] = pow(XI,m12); MUM13[i] = pow(XI,m13); MUM23[i] = pow(XI,m23);
+//	}
+
 }
 
-double QSCEnergy(int *note, double *R, ATOM *atoms, int atomTypeCount, int N)
+double QSCCutEnergy(int *note, double *R, ALLOY *alloy, int N )
+{
+	int not,not1,i,j,disIndex,atomTypeCount;
+	double R1,FMJV,FMJP,EP,a0;
+    double *PEN,*VEN;
+
+	PEN = calloc(N,sizeof(double));
+	VEN = calloc(N,sizeof(double));
+	a0 = getLatticeParameter( alloy );
+	atomTypeCount = alloy->atomTypeCount;
+
+	for( i = 0; i < N-1; i++)
+	{	
+		not = *(note+i);
+		for(j=i+1;j<N;j++)
+		{   
+			R1 = *(R+i*N+j);
+			if( R1 > 2*a0 ) continue;
+			
+			not1 = *(note+j);
+			disIndex = DistanceIndex( R1 / a0 );
+
+			FMJV = QSCcells[not*atomTypeCount+not1][disIndex].MUM;
+			FMJP = QSCcells[not*atomTypeCount+not1][disIndex].NUM;
+
+			VEN[i] = VEN[i]+FMJV*0.5;
+			VEN[j] = VEN[j]+FMJV*0.5;
+			PEN[i] = PEN[i]+FMJP;
+			PEN[j] = PEN[j]+FMJP;
+		}
+	}
+
+	EP = 0;
+	for( i = 0; i < N; i++)
+	{	
+		not = *(note+i);
+		PEN[i] = - QSCAtoms[not * atomTypeCount + not].c
+				 * QSCAtoms[not * atomTypeCount + not].e
+				 * sqrt(PEN[i]);
+
+		EP = EP+VEN[i]+PEN[i];
+	}
+
+	free( PEN );
+	free( VEN );
+
+	return EP;
+}
+
+double QSCEnergy(int *note, double *R, ALLOY *alloy, int N)
 {
 	int not,not1;
 	int i,j;
@@ -337,11 +422,12 @@ double QSCEnergy(int *note, double *R, ATOM *atoms, int atomTypeCount, int N)
     double *PEN,*VEN;
 	QSCATOM *QSCAtoms;
 	double a0; 
-	ALLOY alloy;
+	ATOM *atoms;
+	int atomTypeCount;
 
-	alloy.atoms = atoms;
-	alloy.atomTypeCount = atomTypeCount;
-	a0 = getLatticeParameter( &alloy );
+	atoms = alloy->atoms;
+	atomTypeCount = alloy->atomTypeCount;
+	a0 = getLatticeParameter( alloy );
 	
 	QSCAtoms = calloc(atomTypeCount * atomTypeCount, sizeof(QSCATOM));
 	PEN = calloc(N,sizeof(double));
@@ -364,8 +450,8 @@ double QSCEnergy(int *note, double *R, ATOM *atoms, int atomTypeCount, int N)
 		{   
 			R1 = *(R+i*N+j);
 			
-			if( R1 <= 2*a0 )
-				printf( "%f\n", R1/a0 );
+			if( R1 > 2*a0 )
+				continue;
 
             not1 = *(note+j);
 

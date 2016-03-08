@@ -102,7 +102,7 @@ void FISH_Start(FISHInstance *instance, char *output)
 	
 	// 计算种群中每个个体的能量
 	for( i = 0; i < instance->para.popSize; i++)
-		instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+		instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 	
 	FISH_RefreshBest( instance );
 		
@@ -216,7 +216,7 @@ char FISH_Prey( FISHInstance *instance, int index )
 		one->chrom[randN1] = one->chrom[randN2];
 		one->chrom[randN2] = tempChrom;
 		
-		tempE = GetEnergyFunction1(instance->energyType)(one->chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,N); 
+		tempE = GetCutEnergyFunction1(instance->energyType)(one->chrom,instance->dis.R,&instance->alloy,N); 
 		
 		if( tempE < bestEnergyAfterSwap )
 		{

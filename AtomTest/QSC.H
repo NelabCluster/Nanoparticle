@@ -30,12 +30,15 @@ static QSCATOM QSCNi = {10,5,7.3767E-3,84.745,3.5157},
 //计算QSC势能，使用查表法的时候的初始化函数
 void SetEnergyPow(ATOM atom1,ATOM atom2,ATOM atom3);
 
+void QSC_Init( ALLOY *alloy );
+void QSC_Free();
+
 //计算QSC势能能量
 double QSCEnergy3(int *note,double *R,ATOM atom1,ATOM atom2,ATOM atom3,int N);
 double QSCCutEnergy3(int *note,double *R,ATOM atom1,ATOM atom2,ATOM atom3,int N,double a0);
 
-double QSCEnergy(int *note, double *R, ATOM *atom, int atomTypeCount, int N);
-double QSCCutEnergy(int *note, double *R, ATOM *atoms, int atomTypeCount, int N, double a0);
+double QSCEnergy(int *note, double *R, ALLOY *alloy, int N);
+double QSCCutEnergy(int *note, double *R, ALLOY *alloy, int N );
 
 
 double QSCForce(int *note,double *R,

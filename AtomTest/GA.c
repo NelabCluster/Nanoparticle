@@ -90,6 +90,8 @@ void GA_Start(GAInstance *instance, char *output)
 	a0 = getLatticeParameter(&instance->alloy);
 
 	Line_End = StoragePath( instance->shape, instance->N, &instance->alloy, &instance->atomNum, output);
+	
+	Energy_Init( instance->energyType, &instance->alloy );
 
 	Distance1(&instance->cood,&instance->dis);
 	for(i=0;i<instance->N;i++){
@@ -101,7 +103,7 @@ void GA_Start(GAInstance *instance, char *output)
 	
 	// 计算种群中每个个体的能量
 	for( i = 0; i < instance->para.popSize; i++)
-		instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+		instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 	
 	// 更新 instance->best 和 instance->worst 
 	GA_FindBestAndWorst(instance);
@@ -113,7 +115,7 @@ void GA_Start(GAInstance *instance, char *output)
 	
 	// 打印遗传算法实例的基本信息
 	printf("\nInit GA...\n");
-	GA_PrintMsg(instance);
+	GA_PrintMsg( instance, Line_End );
 
 	printf("\nStart GA...\n");
 	GA_EnergyFile(instance,&fp,Line_End);
@@ -129,7 +131,7 @@ void GA_Start(GAInstance *instance, char *output)
 		mutation_operator(instance);
 		
 		for(i=0;i<instance->para.popSize;i++)
-			instance->pop[i].energy = GetEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,instance->N);
+			instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 				
 		if(instance->para.needAdjustment == 1)
 			adjustment_operator(instance);	
@@ -159,19 +161,20 @@ void GA_Start(GAInstance *instance, char *output)
 		}
 		
 
-		if(step>instance->para.convergenceGenerations)
+		if( step>instance->para.convergenceGenerations || instance->clocks >= instance->para.maxGenerations )
 			break;
 
 	}
 
 	fclose(fp);
 	free(instance->dis.R);
-	
+	Energy_Free( instance->energyType );
+
+	printf("\nEnd GA...\n");
+	GA_PrintMsg( instance, Line_End );
 	GA_ResultFile(instance,Line_End);
 
-//	strcpy(Line_Date,Line_End);
-//	strcat(Line_Date,"\\result.txt");
-//	printData(Line_Date,Line_End,N);
+	printData( Line_End, instance->N );
 	
 	free(Line_End);
 }
@@ -396,7 +399,7 @@ void adjustment_operator(GAInstance *instance)
 			tempChrom = pbest->chrom[randN1];
 			pbest->chrom[randN1] = pbest->chrom[randN2];
 			pbest->chrom[randN2] = tempChrom;
-			tempE = GetEnergyFunction1(instance->energyType)(pbest->chrom,instance->dis.R,instance->alloy.atoms,instance->alloy.atomTypeCount,N); 
+			tempE = GetCutEnergyFunction1(instance->energyType)(pbest->chrom,instance->dis.R,&instance->alloy,N); 
 			if(tempE <= pbest->energy)
 			{
 				pbest->energy = tempE;
@@ -423,34 +426,51 @@ void GA_FindBestAndWorst(GAInstance *instance)
 	}
 }
 
-void GA_PrintMsg(GAInstance *instance)
+void GA_PrintMsg( GAInstance *instance,  char *output )
 {	
 	int i,tempNum;
 	ATOM tempATOM;
+	FILE *fp;
+	char Line_Date[200];
+	
+	strcpy( Line_Date, output );
+	strcat( Line_Date, "\\GA.txt" );
 
-	printf("shape=%s\tN=%d\n",instance->shape,instance->N);
+	fp = fopen( Line_Date, "w" );
+	printf( "shape=%s\tN=%d\n", instance->shape, instance->N );
 	printf("POPSIZE=%d\tpc=%lf\tpm=%lf\n",instance->para.popSize,instance->para.pc,instance->para.pm);
+	fprintf( fp, "shape=%s\tN=%d\n", instance->shape, instance->N );
+	fprintf( fp, "POPSIZE=%d\tpc=%lf\tpm=%lf\n",instance->para.popSize,instance->para.pc,instance->para.pm );
+
 	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
 	{
 		tempATOM = instance->alloy.atoms[i];
 		tempNum = instance->atomNum.numberOfAtom[i];
 		printf("%s=%.3f\t",GetAtomPara(tempATOM).name,(double)tempNum / instance->N);
+		fprintf( fp, "%s=%.3f\t", GetAtomPara(tempATOM).name, (double)tempNum / instance->N );
 	}
-	printf("\n");
+	printf( "\n" );
+	fprintf( fp, "\n" );
+
 	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
 	{
 		tempATOM = instance->alloy.atoms[i];
 		tempNum = instance->atomNum.numberOfAtom[i];
 		printf("%s=%d\t",GetAtomPara(tempATOM).name,tempNum);
+		fprintf( fp, "%s=%d\t",GetAtomPara(tempATOM).name,tempNum );
 	}
 	printf("\n");
 	printf("best=%lf\tworst=%lf\n",instance->best.energy,instance->worst.energy);
+	fprintf( fp, "\n" );
+	fprintf( fp, "best=%lf\tworst=%lf\n",instance->best.energy,instance->worst.energy );
+
+	fclose( fp );
 }
 
 void GA_EnergyFile(GAInstance *instance, FILE **fp, char *output)
 {
 	char Line_Date[200];
-
+	
 	if ( *fp == NULL )
 	{
 		strcpy(Line_Date,output);
@@ -464,7 +484,7 @@ void GA_EnergyFile(GAInstance *instance, FILE **fp, char *output)
 void GA_ResultFile(GAInstance *instance, char *output)
 {
 	char Line_Date[200];
-
+	
 	//生成结果文件，文件路径名：[output]\\result.txt
 	strcpy(Line_Date,output);
 	strcat(Line_Date,"\\result.txt");			
