@@ -31,6 +31,8 @@
 #define LOG(string) 
 #endif
 
+#define ALLOYEQUAL(atom1,atom2,atom3,atom4) (atom1==atom3&&atom2==atom4)||(atom1==atom4||atom2==atom3)
+
 /***************************************
 * @Name:т╜вс
 ****************************************/

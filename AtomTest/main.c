@@ -21,6 +21,7 @@
 #include "Algorithm.h"	//算法的定义
 #include "Energy.h"		//势能的定义
 
+
 main()
 { 	
 
@@ -70,28 +71,32 @@ main()
 		2、当遇到算法长时间无法收敛的情况，可以通过将参数中的 maxGenerations 或是 convergenceGenerations 设置较小值，降低收敛条件。
 		   需要注意的是如果是不同算法对于同一个对象的对比，最好设置相同的收敛条件。
 	*/
+
+	//	蒙特卡罗法,FePt二合金的设置，可以参考这个设置GA和PSO，记得修改势能类型
+	//	MCPARA para;
+	//	MCPara_Init(&para);
+	//	MC2_InitWithMixing("THH210",443,200,Fe,Pt,TBM,&para,"MC2");
+//	MC3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"MC3");
+
 //	遗传算法
 //	GAPARA para;
 //	GAPara_Init(&para);
-//	GA2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"GA2");
+//	GA2_InitWithMixing("THH210",443,180,Pt,Pd,QSC,&para,"GA2");
 //	GA3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"GA3");
 
-//	蒙特卡罗法
-//	MCPARA para;
-//	MCPara_Init(&para);
-//	MC2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"MC2");
-//	MC3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"MC3");
+
 
 //	粒子群算法
-//	PSOPARA para;
-//	PSOPara_Init( &para );
-//	PSO2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"PSO2");
-//	PSO3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
+	//	PSOPARA para;
+	//	PSOPara_Init( &para );
+	//	PSO2_InitWithMixing("THH210",443,220,Pt,Pd,QSC,&para,"FISH2");
+	//	PSO3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
 	
-//	鱼群算法未完成，不可使用
+//	鱼群算法未完成
 //	FISHPARA para;
 //	FISHPara_Init( &para );
-//	FISH2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"FISH2");
-//	FISH3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"PSO3");
+//	FISH2_InitWithMixing("THH210",443,220,Pt,Pd,QSC,&para,"FISH2");
+	//	FISH2_InitWithMixing("CU",63,30,Pt,Pd,QSC,&para,"FISH2");
+	//	FISH3_InitWithMixing("CU",63,10,20,Pt,Pd,Au,QSC,&para,"FISH3");
 
 }

@@ -37,44 +37,6 @@ ATOMPARA GetAtomPara(ATOM atom)
 	return zero;
 }
 
-PEnergy3 GetEnergyFunction(PE type)
-{
-	switch (type)
-	{
-	case QSC:
-		return QSCEnergy3;
-	case QSCNewModel:
-		return NULL;
-	case AEAM:
-		return AEAMEnergy;
-	case Johnson:
-		return JohnsonEnergy;
-	case TBM:
-		return TBMEnergy;
-		break;
-	}
-	return NULL;
-}
-
-PCutEnergy3 GetCutEnergyFunction(PE type)
-{
-	switch (type)
-	{
-	case QSC:
-		return QSCCutEnergy3;
-	case QSCNewModel:
-		return NULL;
-	case AEAM:
-		return AEAMCutEnergy;
-	case Johnson:
-		return JohnsonCutEnergy;
-	case TBM:
-		return TBMCutEnergy;
-		break;
-	}
-	return NULL;
-}
-
 void Energy_Init( PE type, ALLOY *alloy )
 {
 	switch( type )
@@ -98,7 +60,7 @@ void Energy_Free( PE type )
 	}
 }
 
-PEnergy GetEnergyFunction1(PE type)
+PEnergy GetEnergyFunction(PE type)
 {
 	switch (type)
 	{
@@ -109,13 +71,14 @@ PEnergy GetEnergyFunction1(PE type)
 	return NULL;
 }
 
-PCutEnergy GetCutEnergyFunction1(PE type)
+PCutEnergy GetCutEnergyFunction(PE type)
 {
 	switch (type)
 	{
 	case QSC:
 		return QSCCutEnergy;
-		break;
+	case TBM:
+		return TBMCutEnergy;
 	}
 	return NULL;
 }

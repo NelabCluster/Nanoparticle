@@ -92,7 +92,7 @@ void MC_Start( MCInstance *instance, char *output ){
 	}
 	Distance1(&instance->cood,&instance->dis);
 
-	instance->one.E = GetCutEnergyFunction1(instance->energyType)( instance->one.note, instance->dis.R, &instance->alloy, instance->N );
+	instance->one.E = GetCutEnergyFunction(instance->energyType)( instance->one.note, instance->dis.R, &instance->alloy, instance->N );
 	
 
 	printf("\nInit MC...\n");
@@ -122,7 +122,7 @@ void MC_Start( MCInstance *instance, char *output ){
 		instance->one.note[MMJ] = NJ;
 		instance->one.note[NNJ] = MJ;
 
-		E1 = GetCutEnergyFunction1(instance->energyType)( instance->one.note, instance->dis.R, &instance->alloy, instance->N );
+		E1 = GetCutEnergyFunction(instance->energyType)( instance->one.note, instance->dis.R, &instance->alloy, instance->N );
 
 		if(E1 <= instance->one.E)								 // 交换后能量更低则保留，更改则变回原值 
 		{

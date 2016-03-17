@@ -14,6 +14,7 @@ typedef struct
 	int tryNumber;				//觅食尝试次数，当selfAdaption是1时无效
 	int visual;					//可视距离，当selfAdaption是1时无效
 	int generation;				//总迭代次数
+	int convergenceGenerations;	//收敛代数
 	char needOrderCood;			//是否需要排序；1：需要，0：不需要
 	char needAdjustment;		//是否需要调整算子；1：需要，0：不需要
 	double adjustmentRate;		//调整概率，当needAdjustment是1时有效
@@ -23,7 +24,7 @@ typedef struct
 * @Name: 鱼群算法默认参数值
 ****************************************/
 static const FISHPARA _defFISHPara = {
-	100,0.8,1,100,100,2000,0,0,1.0
+	100,0.8,1,100,100,2000,100,0,0,1.0
 };
 
 
@@ -156,7 +157,7 @@ void FISH_RefreshVisualAtIndex( FISHInstance *instance, int index );
 * @param：FISHInstance *instance --- 鱼群算法实例
 * @return：void --- 
 ****************************************/
-void FISH_PrintMsg(FISHInstance *instance);
+void FISH_PrintMsg(FISHInstance *instance,  char *output );
 
 /***************************************
 * @Name:FISH_EnergyFile
@@ -216,6 +217,11 @@ void FISHIndividual_Free( FISHINDIVIDUAL *one );
 
 int FISHIndividual_Dist( FISHINDIVIDUAL *one, FISHINDIVIDUAL *two, int N );
 
+void FISHIndividual_Adjust( FISHINDIVIDUAL *one, ATOMNUM *atomNum, int N );
+
+void FISHIndividual_Print( FISHINDIVIDUAL *one, ATOMNUM *atomNum, int N );
+
 void FISVisualTable_Init( FISVisualTable *table, int popSize );
 
 void FISVisualTable_Free( FISVisualTable *table );
+

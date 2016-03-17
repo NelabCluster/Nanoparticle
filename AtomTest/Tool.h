@@ -9,10 +9,8 @@ ATOMPARA GetAtomPara(ATOM atom);
 
 void Energy_Init( PE type, ALLOY *alloy );
 void Energy_Free( PE type );
-PEnergy3 GetEnergyFunction(PE type);
-PCutEnergy3 GetCutEnergyFunction(PE type);
-PEnergy GetEnergyFunction1(PE type);
-PCutEnergy GetCutEnergyFunction1(PE type);
+PEnergy GetEnergyFunction(PE type);
+PCutEnergy GetCutEnergyFunction(PE type);
 
 /***************************************
 * @Name:ReadCood

@@ -85,13 +85,15 @@ void FISH_Start(FISHInstance *instance, char *output)
 	int i, tig = 0, step = 0;
 	char state;
 	char *Line_End;
-
+	
 	srand((unsigned)time(NULL));
 	instance->dis.R = calloc(instance->N*instance->N,sizeof(double));
 	a0 = getLatticeParameter(&instance->alloy);
 
 	Line_End = StoragePath( instance->shape, instance->N, &instance->alloy, &instance->atomNum, output);
 	
+	Energy_Init( instance->energyType, &instance->alloy );
+
 	Distance1(&instance->cood,&instance->dis);
 	for(i=0;i<instance->N;i++){
 		instance->cood.x[i] = instance->cood.x[i]*a0/(instance->dis.Rmin*sqrt(2));
@@ -102,7 +104,7 @@ void FISH_Start(FISHInstance *instance, char *output)
 	
 	// 计算种群中每个个体的能量
 	for( i = 0; i < instance->para.popSize; i++)
-		instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
+		instance->pop[i].energy = GetCutEnergyFunction(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 	
 	FISH_RefreshBest( instance );
 		
@@ -116,7 +118,7 @@ void FISH_Start(FISHInstance *instance, char *output)
 	
 	// 打印鱼群算法实例的基本信息
 	printf( "\nInit FISH...\n" );
-	FISH_PrintMsg( instance );
+	FISH_PrintMsg( instance, Line_End );
 
 	printf( "\nStart FISH...\n" );
 	FISH_EnergyFile( instance, &fp, Line_End );
@@ -128,22 +130,57 @@ void FISH_Start(FISHInstance *instance, char *output)
 			FISH_SelAdaption( instance );
 
 		FISH_RefreshVisual( instance );
-		
+		//	printf("try=%d\n",instance->para.tryNumber);
+		//	printf("1\n");
 		for( i = 0; i < instance->para.popSize; i ++ )
 		{
 			state = FISH_Follow( instance, i );
 			if( state != 1)
 			{
 				state = FISH_Prey( instance, i );
+				
 				if( state != 1 )
 					state = FISH_Swarm( instance, i );
 			}
 		}
+		//	printf("2,step=%d\n",step);
+		
+		FISH_RefreshBest( instance );
+		E1 = instance->best.energy;
+		if( E1-E0<0.001 && E1-E0>-0.001){
+			tig = 0;
+			step ++;
+		}	else {
+			tig = 1;
+			step = 0;
+			instance->IJKL++;
+		}
+		if(tig == 1 || (step!=0 && step%100 == 0))
+		{	
+			E0 = E1;
+			printf("clocks=%d\tIJKL=%d\tstep=%d\n",instance->clocks,instance->IJKL,step);
+			printf("  E   =%f\n",E0);
 
-		if( instance->clocks >= instance->para.generation ) break; 
+			FISH_EnergyFile(instance,&fp,Line_End);
+			FISH_ResultFile(instance,Line_End);	
+		}
+
+
+
+		if( step>instance->para.convergenceGenerations ||  instance->clocks >= instance->para.generation )
+			break; 
 	}
 
+
+
 	free( instance->dis.R );
+	Energy_Free( instance->energyType );
+
+	printf("\nEnd GA...\n");
+	FISH_PrintMsg( instance, Line_End );
+	FISH_ResultFile( instance, Line_End );
+
+	printData( Line_End, instance->N );
 	free( Line_End );
 }
 
@@ -178,7 +215,7 @@ char FISH_Follow( FISHInstance *instance, int index )
 				visualSize ++;
 		}
 
-		if( visualSize / popSize < instance->para.delta )
+		if( visualSize*1.0 / popSize < instance->para.delta )
 		{
 			FISHIndividual_Copy( instance->pop+index, instance->pop+bestInVisualIndex, instance->N );
 			FISH_RefreshVisualAtIndex( instance, index );
@@ -202,7 +239,7 @@ char FISH_Prey( FISHInstance *instance, int index )
 	one = instance->pop + index;
 	bestEnergyAfterSwap = 0;
 	swap[0] = 0; swap[1] = 0;
-
+	
 	for( i = 0; i < instance->para.tryNumber; i++ )
 	{
 		randN1 = RANDINT( N );
@@ -216,7 +253,7 @@ char FISH_Prey( FISHInstance *instance, int index )
 		one->chrom[randN1] = one->chrom[randN2];
 		one->chrom[randN2] = tempChrom;
 		
-		tempE = GetCutEnergyFunction1(instance->energyType)(one->chrom,instance->dis.R,&instance->alloy,N); 
+		tempE = GetCutEnergyFunction(instance->energyType)(one->chrom,instance->dis.R,&instance->alloy,N); 
 		
 		if( tempE < bestEnergyAfterSwap )
 		{
@@ -246,8 +283,69 @@ char FISH_Prey( FISHInstance *instance, int index )
 	return ( bestEnergyAfterSwap == 0 )?0:1;
 }
 
-char FISH_Swarm( FISHInstance *instance, int i )
-{ return 0; }
+char FISH_Swarm( FISHInstance *instance, int index )
+{
+	int i,j,N,popSize,nearNum,atomTypeCount,maxIndex;
+	FISHINDIVIDUAL center;
+	int *numOfAtoms;
+	
+	FISHIndividual_Init( &center, instance->N );
+	N = instance->N;
+	popSize = instance->para.popSize;
+	numOfAtoms = calloc( instance->alloy.atomTypeCount, sizeof(int) );
+	atomTypeCount = instance->alloy.atomTypeCount;
+
+	nearNum = 0;
+	for( i = 0; i < popSize; i++ )
+	{
+		if( i == index ) continue;
+		if( instance->visualTable.table[index*popSize + i] == 1 )
+			nearNum ++;
+	}
+
+	if( nearNum == 0 )
+		return 0;
+
+	if( nearNum*1.0 / popSize >= instance->para.delta )
+		return 0;
+	
+	for( i = 0; i < N; i++ )
+	{
+		memset( numOfAtoms, 0, atomTypeCount*sizeof(int) );
+		for( j = 0; j < popSize; j++ )
+		{
+			if( j == index ) continue;
+			if( instance->visualTable.table[index*popSize + j] == 1 )
+			{
+				numOfAtoms[ instance->pop[j].chrom[i] ] ++;
+			}
+		}
+		
+		maxIndex = 0;
+		for( j = 1; j < atomTypeCount; j++ )
+		{
+			if( numOfAtoms[j] > numOfAtoms[maxIndex] )
+				maxIndex = j;
+		}
+		center.chrom[i] = maxIndex;
+	}
+	
+	//	FISHIndividual_Print( &center, &instance->atomNum, N );
+	FISHIndividual_Adjust( &center, &instance->atomNum, N );
+	//	FISHIndividual_Print( &center, &instance->atomNum, N );
+
+	center.energy = GetCutEnergyFunction(instance->energyType)(center.chrom,instance->dis.R,&instance->alloy,N); 
+	
+	if( center.energy < instance->pop[index].energy )
+	{
+		FISHIndividual_Copy( instance->pop+index, &center, instance->N );
+		FISH_RefreshVisualAtIndex( instance, index );
+	}
+
+	free( numOfAtoms );
+	FISHIndividual_Free( &center );
+	return 0; 
+}
 
 void FISH_SelAdaption( FISHInstance *instance )
 {
@@ -271,6 +369,7 @@ void FISH_SelAdaption( FISHInstance *instance )
 		}
 		instance->para.visual = (int) ( 0.5*count / instance->para.popSize );
 	}
+	//	instance->para.visual = 30;
 }
 
 void FISH_RefreshBest( FISHInstance *instance )
@@ -324,28 +423,44 @@ void FISH_RefreshVisualAtIndex( FISHInstance *instance, int index )
 	}
 }
 
-void FISH_PrintMsg(FISHInstance *instance)
+void FISH_PrintMsg(FISHInstance *instance,  char *output )
 { 
 	int i,tempNum;
 	ATOM tempATOM;
+	FILE *fp;
+	char Line_Date[200];
+
+	strcpy( Line_Date, output );
+	strcat( Line_Date, "\\FISH.txt" );
+
+	fp = fopen( Line_Date, "w" );
 
 	printf( "shape=%s\tN=%d\n", instance->shape, instance->N );
 	printf( "POPSIZE=%d\ttryNumber=%d\tvisual=%lf\n", instance->para.popSize, instance->para.tryNumber, instance->para.visual );
+	fprintf( fp, "shape=%s\tN=%d\n", instance->shape, instance->N );
+	fprintf( fp, "POPSIZE=%d\ttryNumber=%d\tvisual=%lf\n", instance->para.popSize, instance->para.tryNumber, instance->para.visual );
+
+	
 	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
 	{
 		tempATOM = instance->alloy.atoms[i];
 		tempNum = instance->atomNum.numberOfAtom[i];
 		printf( "%s=%.3f\t", GetAtomPara(tempATOM).name, (double)tempNum / instance->N );
+		fprintf( fp, "%s=%.3f\t", GetAtomPara(tempATOM).name, (double)tempNum / instance->N );
 	}
-	printf("\n");
+	printf( "\n" );
+	fprintf( fp, "\n" );
 	for( i = 0; i < instance->alloy.atomTypeCount; i++ )
 	{
 		tempATOM = instance->alloy.atoms[i];
 		tempNum = instance->atomNum.numberOfAtom[i];
 		printf( "%s=%d\t", GetAtomPara(tempATOM).name, tempNum );
+		fprintf( fp, "%s=%d\t", GetAtomPara(tempATOM).name, tempNum );
 	}
 	printf( "\n" );
 	printf( "best=%lf\n", instance->best.energy );
+	fprintf( fp, "\n" );
+	fprintf( fp, "best=%lf\n", instance->best.energy );
 }
 
 void FISH_EnergyFile(FISHInstance *instance, FILE **fp, char *output)
@@ -363,7 +478,20 @@ void FISH_EnergyFile(FISHInstance *instance, FILE **fp, char *output)
 }
 
 void FISH_ResultFile( FISHInstance *instance, char *output )
-{ }
+{
+	char Line_Date[200];
+	
+	//生成结果文件，文件路径名：[output]\\result.txt
+	strcpy(Line_Date,output);
+	strcat(Line_Date,"\\result.txt");			
+	printResult(instance->best.chrom, instance->N, &instance->cood, Line_Date);
+	
+	//生成绘图文件，文件路径名：[output]\\Diamond.txt
+	strcpy(Line_Date,output);
+	strcat(Line_Date,"\\Diamond.txt");
+	printDiamond(instance->best.chrom, instance->N, &instance->cood, &instance->alloy, Line_Date);
+	
+}
 
 void FISHIndividual_Init( FISHINDIVIDUAL *one, int N )
 { 
@@ -399,6 +527,81 @@ int FISHIndividual_Dist( FISHINDIVIDUAL *one, FISHINDIVIDUAL *two, int N )
 
 	return dis;
 } 
+
+void FISHIndividual_Adjust( FISHINDIVIDUAL *one, ATOMNUM *atomNum, int N )
+{
+	int i,atomTypeCount,randIndex0,randIndex,tempChorm;
+	ATOMNUM atomNumOfOne;
+	
+	atomTypeCount = atomNum->atomTypeCount;
+	AtomNum_Copy( &atomNumOfOne, atomNum );
+
+	for( i = 0; i < atomTypeCount; i++ )
+		atomNumOfOne.numberOfAtom[i] = 0;
+
+	for( i = 0; i < N; i++)
+		atomNumOfOne.numberOfAtom[one->chrom[i]] ++;
+	
+	for( i = 0; i < atomTypeCount; i++ )
+	{
+		while( atomNumOfOne.numberOfAtom[i] < atomNum->numberOfAtom[i] )
+		{
+			if( atomNumOfOne.numberOfAtom[i] < atomNum->numberOfAtom[i] )
+			{
+				randIndex = RANDINT( N );
+				tempChorm = one->chrom[ randIndex ];
+				while( atomNumOfOne.numberOfAtom[tempChorm] <= atomNum->numberOfAtom[tempChorm] )
+				{
+					randIndex = RANDINT( N );
+					tempChorm = one->chrom[ randIndex ];	
+				}
+				one->chrom[ randIndex ] = i;
+				atomNumOfOne.numberOfAtom[i] ++;
+				atomNumOfOne.numberOfAtom[tempChorm]--;
+			}
+//			if( atomNumOfOne.numberOfAtom[i] > atomNum->numberOfAtom[i] )
+//			{
+//				randIndex0 = RANDINT( N );
+//				while( one->chrom[ randIndex ] != i )
+//					randIndex0 = RANDINT( N );
+//
+//				randIndex = RANDINT( N );
+//				tempChorm = one->chrom[ randIndex ];
+//				while( atomNumOfOne.numberOfAtom[tempChorm] >= atomNum->numberOfAtom[tempChorm] )
+//				{
+//					randIndex = RANDINT( N );
+//					tempChorm = one->chrom[ randIndex ];	
+//				}
+//				one->chrom[ randIndex0 ] = tempChorm;
+//				atomNumOfOne.numberOfAtom[i] --;
+//				atomNumOfOne.numberOfAtom[tempChorm]++;				
+//			}
+		}
+	}
+
+	AtomNum_Free( &atomNumOfOne );
+}
+
+void FISHIndividual_Print( FISHINDIVIDUAL *one, ATOMNUM *atomNum, int N )
+{
+	int i,atomTypeCount;
+	ATOMNUM atomNumOfOne;
+	
+	atomTypeCount = atomNum->atomTypeCount;
+	AtomNum_Copy( &atomNumOfOne, atomNum );
+
+	for( i = 0; i < atomTypeCount; i++ )
+		atomNumOfOne.numberOfAtom[i] = 0;
+
+	for( i = 0; i < N; i++)
+		atomNumOfOne.numberOfAtom[one->chrom[i]] ++;
+	
+	for( i = 0; i < atomTypeCount; i++ )
+		printf("%d\t",atomNumOfOne.numberOfAtom[i]);
+	printf("\n");
+
+	AtomNum_Free( &atomNumOfOne );
+}
 
 void FISVisualTable_Init( FISVisualTable *table, int popSize )
 {

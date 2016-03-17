@@ -103,7 +103,7 @@ void GA_Start(GAInstance *instance, char *output)
 	
 	// 计算种群中每个个体的能量
 	for( i = 0; i < instance->para.popSize; i++)
-		instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
+		instance->pop[i].energy = GetCutEnergyFunction(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 	
 	// 更新 instance->best 和 instance->worst 
 	GA_FindBestAndWorst(instance);
@@ -131,7 +131,7 @@ void GA_Start(GAInstance *instance, char *output)
 		mutation_operator(instance);
 		
 		for(i=0;i<instance->para.popSize;i++)
-			instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
+			instance->pop[i].energy = GetCutEnergyFunction(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 				
 		if(instance->para.needAdjustment == 1)
 			adjustment_operator(instance);	
@@ -399,7 +399,7 @@ void adjustment_operator(GAInstance *instance)
 			tempChrom = pbest->chrom[randN1];
 			pbest->chrom[randN1] = pbest->chrom[randN2];
 			pbest->chrom[randN2] = tempChrom;
-			tempE = GetCutEnergyFunction1(instance->energyType)(pbest->chrom,instance->dis.R,&instance->alloy,N); 
+			tempE = GetCutEnergyFunction(instance->energyType)(pbest->chrom,instance->dis.R,&instance->alloy,N); 
 			if(tempE <= pbest->energy)
 			{
 				pbest->energy = tempE;

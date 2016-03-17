@@ -19,10 +19,14 @@ static TBMATOM TBMPt = {0.2975,2.695,10.612,4.004,2.7747},
 			   TBMPd = {0.1746,1.718,10.867,3.742,2.7485},
 			   TBMPtPd1 = {0.23,2.2,10.74,3.87,2.76},
 			   TBMPtPd2 = {0.35,2.2,10.74,3.87,2.76},
-			   TBMPtPd3 = {0.23,3.0,10.74,3.87,2.76};
+			   TBMPtPd3 = {0.23,3.0,10.74,3.87,2.76},
+			   TBMFe = {0.13315,1.6179,10.612,2.60,2.553},
+			   TBMPtFe = {0.19903,2.0881,10.556,3.302,2.6638};
 
 
-double TBMCutEnergy(int *note,double *R,ATOM atom1,ATOM atom2,ATOM atom3,int N,double a0);
+double TBMCutEnergy( int *note, double *R, ALLOY *alloy, int N );
+
+double TBMCutEnergy2(int *note,double *R,ATOM atom1,ATOM atom2,int N,double a0);
 
 double TBMEnergy(int *note,double *R,ATOM atom1,ATOM atom2,ATOM atom3,int N);
 

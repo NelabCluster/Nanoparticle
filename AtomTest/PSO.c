@@ -107,7 +107,7 @@ void PSO_Start(PSOInstance *instance,char *output)
 
 	//初始化
 	for( i = 0; i < instance->para.popSize; i++)
-		instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
+		instance->pop[i].energy = GetCutEnergyFunction(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 	updatePbest( instance );
 	updateGbest( instance );
 	
@@ -130,7 +130,7 @@ void PSO_Start(PSOInstance *instance,char *output)
 		upDateChorm( instance );
 
 		for( i = 0; i < instance->para.popSize; i++)
-			instance->pop[i].energy = GetCutEnergyFunction1(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
+			instance->pop[i].energy = GetCutEnergyFunction(instance->energyType)(instance->pop[i].chrom,instance->dis.R,&instance->alloy,instance->N);
 
 		//更新pbest
 		updatePbest( instance );
@@ -263,7 +263,7 @@ void PSOMutation( PSOInstance *instance )
 			tempChrom = pbest->chrom[randN1];
 			pbest->chrom[randN1] = pbest->chrom[randN2];
 			pbest->chrom[randN2] = tempChrom;
-			tempE = GetCutEnergyFunction1(instance->energyType)(pbest->chrom,instance->dis.R,&instance->alloy,instance->N); 
+			tempE = GetCutEnergyFunction(instance->energyType)(pbest->chrom,instance->dis.R,&instance->alloy,instance->N); 
 			if(tempE <= pbest->energy)
 			{
 				pbest->energy = tempE;

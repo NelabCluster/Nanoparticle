@@ -6,15 +6,13 @@
 --------------------Configuration: AtomTest - Win32 Debug--------------------
 </h3>
 <h3>Command Lines</h3>
-Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSPC1CA.tmp" with contents
+Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSPB124.tmp" with contents
 [
 /nologo /MLd /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_CONSOLE" /D "_MBCS" /FR"Debug/" /Fp"Debug/AtomTest.pch" /YX /Fo"Debug/" /Fd"Debug/" /FD /GZ /c 
-"E:\学校\程序\GitHub\Nanoparticle\AtomTest\main.c"
-"E:\学校\程序\GitHub\Nanoparticle\AtomTest\GA.c"
-"E:\学校\程序\GitHub\Nanoparticle\AtomTest\PSO.c"
+"E:\学校\程序\GitHub\Nanoparticle\AtomTest\FISH.c"
 ]
-Creating command line "cl.exe @C:\Users\Lenovo\AppData\Local\Temp\RSPC1CA.tmp" 
-Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSPC1CB.tmp" with contents
+Creating command line "cl.exe @C:\Users\Lenovo\AppData\Local\Temp\RSPB124.tmp" 
+Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSPB125.tmp" with contents
 [
 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:console /incremental:yes /pdb:"Debug/AtomTest.pdb" /debug /machine:I386 /out:"Debug/AtomTest.exe" /pdbtype:sept 
 ".\Debug\main.obj"
@@ -29,14 +27,13 @@ kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32
 ".\Debug\QSCNewModel.obj"
 ".\Debug\TBM.obj"
 ]
-Creating command line "link.exe @C:\Users\Lenovo\AppData\Local\Temp\RSPC1CB.tmp"
+Creating command line "link.exe @C:\Users\Lenovo\AppData\Local\Temp\RSPB125.tmp"
 <h3>Output Window</h3>
 Compiling...
-main.c
-GA.c
-PSO.c
+FISH.c
+e:\学校\程序\github\nanoparticle\atomtest\fish.c(533) : warning C4101: 'randIndex0' : unreferenced local variable
 Linking...
-Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSPC4E7.tmp" with contents
+Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSPB2CB.tmp" with contents
 [
 /nologo /o"Debug/AtomTest.bsc" 
 ".\Debug\main.sbr"
@@ -50,7 +47,7 @@ Creating temporary file "C:\Users\Lenovo\AppData\Local\Temp\RSPC4E7.tmp" with co
 ".\Debug\QSC.sbr"
 ".\Debug\QSCNewModel.sbr"
 ".\Debug\TBM.sbr"]
-Creating command line "bscmake.exe @C:\Users\Lenovo\AppData\Local\Temp\RSPC4E7.tmp"
+Creating command line "bscmake.exe @C:\Users\Lenovo\AppData\Local\Temp\RSPB2CB.tmp"
 Creating browse info file...
 <h3>Output Window</h3>
 

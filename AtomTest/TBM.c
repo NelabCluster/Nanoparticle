@@ -1,8 +1,21 @@
 #include "TBM.h"
+#include "Base.h"
+#include "Tool.h"
 
 #define NNN 2
 
-double TBMCutEnergy(int *note,double *R,ATOM atom1,ATOM atom2,ATOM atom3,int N,double a)
+double TBMCutEnergy( int *note, double *R, ALLOY *alloy, int N )
+{
+	double a0;
+	a0 = getLatticeParameter( alloy );
+	if( alloy->atomTypeCount != 2 )
+		return 0;
+
+	return TBMCutEnergy2( note, R, alloy->atoms[0], alloy->atoms[1], N, a0);
+}
+
+
+double TBMCutEnergy2(int *note,double *R,ATOM atom1,ATOM atom2,int N,double a)
 {
 	int not;
 	int i,j;
@@ -154,6 +167,8 @@ TBMATOM GetTBMAtom(ATOM atom)
 		return TBMPd;
 	case Pd3:
 		return TBMPd;
+	case Fe:
+		return TBMFe;
 	default:
 		break;
 	}
@@ -163,18 +178,13 @@ TBMATOM GetTBMAtom(ATOM atom)
 TBMATOM GetTwoTBMAtom(ATOM atom1,ATOM atom2)
 {
 	TBMATOM zero = {0};
-	if(atom1 != Pt)
-		return zero;
-	switch(atom2)
-	{
-	case Pd1:
+	if( ALLOYEQUAL(atom1,atom2,Pt,Pd1) )
 		return TBMPtPd1;
-	case Pd2:
+	if( ALLOYEQUAL(atom1,atom2,Pt,Pd2))
 		return TBMPtPd2;
-	case Pd3:
+	if( ALLOYEQUAL(atom1,atom2,Pt,Pd3))
 		return TBMPtPd3;
-	default:
-		break;
-	}
+	if( ALLOYEQUAL(atom1,atom2,Fe,Pt) )
+		return TBMPtFe;
 	return zero;
 }
